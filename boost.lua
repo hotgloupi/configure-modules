@@ -1,5 +1,5 @@
 --- C++ Boost libraries
--- @module configure.lang.cxx.libraries
+-- @module configure.modules.boost
 
 local M = {}
 
