@@ -19,7 +19,7 @@ local function extract_flags(f)
 	if flags ~= nil then
 		parts = flags:strip('-'):split('-')
 	end
-	res = {}
+	local res = {}
 	for i, part in ipairs(parts) do
 		if part == "mt" then
 			res['threading'] = true
