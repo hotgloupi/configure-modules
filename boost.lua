@@ -26,7 +26,7 @@ local function extract_flags(f)
 		elseif part:starts_with('vc') then
 			res['toolset'] = part
 		elseif part:match("%d+_%d+") then
-			res['version'] = part -- XXX should replace _ with .
+			res['version'] = part:gsub('_', '.')
 		elseif part:match("^s?g?d?p?n?$") then
 			table.update(res, {
 				static_runtime = part:find('s') ~= nil,
@@ -227,6 +227,100 @@ function M.find(args)
 		})
 	end
 	return res
+end
+
+--- Build Boost libraries
+--
+-- @param args
+-- @param args.build Build instance
+-- @param args.name Name of the project (defaults to 'boost')
+-- @param args.version Version to use
+-- @param args.compiler
+-- @param args.install_directory
+-- @param args.kind 'shared' or 'static' (defaults to 'static')
+-- @param args.python Python library to use
+-- @param args.zlib Zlib library
+-- @param args.bzip2 BZip2 library
+function M.build(args)
+	local tarball = 'boost_' .. args.version:gsub('%.', '_') .. '.tar.gz'
+	local url = 'http://sourceforge.net/projects/boost/files/boost/' ..
+	            args.version ..'/' .. tarball .. '/download'
+	local project = require('configure.external').Project:new(
+		table.update({name = 'boost'}, args)
+	):download_tarball{
+		url = url,
+		filename = tarball,
+	}
+
+	local install_dir = project:step_directory('install')
+	local source_dir = project:step_directory('source')
+
+	local bootstrap_command = {
+		'sh', 'bootstrap.sh',
+		'--prefix=' .. tostring(install_dir)
+	}
+
+	if args.python ~= nil then
+		-- TODO Add python support
+		--with-python-root=${BUILD_PREFIX}
+		--with-python=${BUILD_PREFIX}/bin/python${PYTHON2_SHORT_VERSION}
+		--with-python-version=${PYTHON2_SHORT_VERSION}
+	end
+
+	local bjam = source_dir / 'bjam'
+
+	project:add_step{
+		name = 'bootstrap',
+		directory = source_dir,
+		targets = {
+			[0] = {bootstrap_command},
+		},
+		working_directory = source_dir,
+	}
+
+	local install_command = {
+		tostring(bjam), 'install',
+		'--without-mpi',
+		'--disable-icu',
+		'--prefix=' .. tostring(install_dir),
+		'--layout=system',
+		'link=static',
+		'link=shared',
+		'variant=release',
+		'threading=multi',
+		'cxxflags=-fPIC',
+		'define=BOOST_ERROR_CODE_HEADER_ONLY=1',
+		'define=BOOST_SYSTEM_NO_DEPRECATED=1',
+		--'dll-path="XXORIGIN/"',
+		'--debug-configuration',
+		--'-j4',
+		'-sBOOST_ROOT=' .. tostring(source_dir),
+		'--reconfigure',
+		'-d+2',
+	}
+	if args.zlib ~= nil then
+		table.extend(install_command, {
+			'-sZLIB_INCLUDE=' .. tostring(args.zlib.include_directories[1]:path()),
+			'-sZLIB_LIBPATH=' .. tostring(args.zlib.files[1]:path():parent_path()),
+			'-sZLIB_BINARY=z'
+		})
+	end
+	if args.bzip2 ~= nil then
+		table.extend(install_command, {
+			'-sBZIP2_INCLUDE=' .. tostring(args.bzip2.include_directories[1]:path()),
+			'-sBZIP2_LIBPATH=' .. tostring(args.bzip2.files[1]:path():parent_path()),
+			'-sBZIP2_BINARY=bzip2'
+		})
+	end
+	project:add_step{
+		name = 'install',
+		directory = source_dir,
+		targets = {
+			[0] = {install_command},
+		},
+		working_directory = source_dir,
+	}
+
 end
 
 return M
