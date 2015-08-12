@@ -10,8 +10,48 @@ local function default_component_defines(component, kind, threading)
 	return {}
 end
 
+local components = {
+	'atomic',
+	'chrono',
+	'container',
+	'context',
+	'coroutine',
+	'date_time',
+	'exception',
+	'filesystem',
+	'graph',
+	'graph_parallel',
+	'iostreams',
+	'locale',
+	'log',
+	'math',
+	'mpi',
+	'program_options',
+	'python',
+	'random',
+	'regex',
+	'serialization',
+	'signals',
+	'system',
+	'test',
+	'thread',
+	'timer',
+	'wave',
+}
 
-local function extract_flags(f)
+
+--- Deduce compilation info from filename
+--
+-- @arg f Filename to be parsed
+-- @returns a table containing the following fields:
+--  - threading: `true` when threading is enabled
+--  - toolset: Boost toolset
+--  - version: {Major, minor, sub-minor}
+--  - static_runtime: `true` when the standard library is linked statically
+--  - debug_runtime: `true` if the debug standard library is used
+--  - stlport: `true` if stlport is used
+--  - native_iostreams: `true` when native iostreams are used
+local function extract_flags_from_filename(f)
 	-- Boost library files are as follow:
 	-- (lib)?boost_<COMPONENT>(-<FLAGS>)?.(lib|a|so)(.<VERSION>)?
 	local flags = tostring(f:filename()):match("-[^.]*")
@@ -42,6 +82,75 @@ local function extract_flags(f)
 	return res
 end
 
+local function find_config_include(boost_root, compiler)
+	local fs = compiler.build:fs()
+	local dirs = {}
+	if boost_root ~= nil then
+		table.append(dirs, boost_root)
+		table.append(dirs, boost_root / 'include')
+	end
+	table.extend(dirs, compiler:system_include_directories())
+	return fs:find_file(
+		dirs,
+		'boost/version.hpp'
+	):path():parent_path():parent_path()
+end
+
+local function find_library_dir(boost_root, compiler)
+	local build = compiler.build
+	local fs = build:fs()
+	local dirs = {}
+	if boost_root then
+		table.append(dirs, boost_root / 'lib')
+		table.append(dirs, boost_root / 'stage/lib')
+	end
+	table.extend(dirs, compiler:system_library_directories())
+	for _, dir in ipairs(dirs) do
+		build:debug("Examining library directory", dir)
+		for _, lib in ipairs(fs:glob(dir, "libboost_*")) do
+			-- return when some file is found
+			return dir
+		end
+	end
+	build:error("Couldn't find Boost library directory (checked " .. table.tostring(dirs) .. ")")
+end
+
+--
+local function find_library_files(config_header, library_dir, components, compiler)
+	local build = compiler.build
+	local fs = build:fs()
+	local component_files = {}
+	local lib_files = config_header:set_cached_property(
+		'library-files',
+		function ()
+			local res = {}
+			for _, node in ipairs(fs:glob(library_dir, "*boost_*")) do
+				table.append(res, node:path())
+			end
+			return res
+		end
+	)
+	for _, component in ipairs(components) do
+		component_files[component] = config_header:set_cached_property(
+			component .. '-all-library-files',
+			function ()
+				local res = {}
+				for _, lib in ipairs(lib_files) do
+					local filename = tostring(lib:filename())
+					if filename:starts_with("libboost_" .. component) or
+						(build:target():os() == Platform.OS.windows and
+						 filename:starts_with("boost_" .. component)) then
+						table.append(res, lib)
+						build:debug("Found Boost library", lib, "for component", component)
+					end
+				end
+				return res
+			end
+		)
+	end
+	return component_files
+end
+
 --- Find Boost libraries
 --
 -- @param args
@@ -55,6 +164,10 @@ end
 -- @param[opt] args.<COMPONENT>_kind Select the 'static' or 'shared' version of a component.
 -- @param[opt] args.<COMPONENT>_defines A list of preprocessor definitions
 function M.find(args)
+	local components = args.components
+	if args.components == nil then
+		build:error("You must provide a list of Boost libraries to search for")
+	end
 	local env_prefix = args.env_prefix or 'BOOST'
 	local build = args.compiler.build
 	local fs = build:fs()
@@ -65,18 +178,7 @@ function M.find(args)
 	local boost_include_dir = build:lazy_path_option(
 		env_prefix .. '-include-dir',
 		"Boost include directory",
-		function ()
-			local dirs = {}
-			if boost_root ~= nil then
-				table.append(dirs, boost_root)
-				table.append(dirs, boost_root / 'include')
-			end
-			table.extend(dirs, args.compiler:system_include_directories())
-			return fs:find_file(
-				dirs,
-				'boost/version.hpp'
-			):path():parent_path():parent_path()
-		end
+		function() return find_config_include(boost_root, args.compiler) end
 	)
 	local boost_version_header = build:file_node(boost_include_dir / 'boost/version.hpp')
 	if not boost_version_header:path():exists() then
@@ -86,43 +188,15 @@ function M.find(args)
 	local boost_library_dir = build:lazy_path_option(
 		env_prefix .. '-library-dir',
 		"Boost library dir",
-		function ()
-			local dirs = {}
-			if boost_root then
-				table.append(dirs, boost_root / 'lib')
-				table.append(dirs, boost_root / 'stage/lib')
-			end
-			table.extend(dirs, args.compiler:system_library_directories())
-			for _, dir in ipairs(dirs) do
-				build:debug("Examining library directory", dir)
-				for _, lib in ipairs(fs:glob(dir, "libboost_*")) do
-					-- return when some file is found
-					return dir
-				end
-			end
-			build:error("Couldn't find Boost library directory (checked " .. table.tostring(dirs) .. ")")
-		end
+		function() return find_library_dir(boost_root, args.compiler) end
 	)
-	local components = args.components
-	if components == nil then
-		build:error("You must provide a list of Boost libraries to search for")
-	end
 
-	local component_files = {}
-	for _, lib in ipairs(fs:glob(boost_library_dir, "*boost_*")) do
-		for _, component in ipairs(components) do
-			local filename = tostring(lib:path():filename())
-			if filename:starts_with("libboost_" .. component) or
-				(build:target():os() == Platform.OS.windows and
-				 filename:starts_with("boost_" .. component)) then
-				if component_files[component] == nil then
-					component_files[component] = {}
-				end
-				table.append(component_files[component], lib)
-				build:debug("Found Boost library", lib, "for component", component)
-			end
-		end
-	end
+	local component_files = find_library_files(
+		boost_version_header,
+		boost_library_dir,
+		components,
+		args.compiler
+	)
 
 	local Library = require('configure.lang.cxx.Library')
 	local res = {}
@@ -132,31 +206,37 @@ function M.find(args)
 		end
 		local files = component_files[component]
 		local runtime_files = {}
-		local filtered = {}
 		local kind = args[component .. '_kind'] or args.kind or 'static'
 		-- Filter files based on the kind selected ('static' or 'shared')
 		local ext = args.compiler:_library_extension(kind)
-		for i, f in ipairs(files) do
-			local filename = tostring(f:path():filename())
-			if build:target():os() == Platform.OS.windows then
-				if filename:ends_with('.lib') then
-					if kind == 'shared' and filename:starts_with('boost_') then
-						table.append(filtered, f)
-					elseif kind == 'static' and filename:starts_with('libboost_') then
-						table.append(filtered, f)
+		local filtered = boost_version_header:set_cached_property(
+			component .. '-' .. kind .. '-library-files',
+			function ()
+				local res = {}
+				for i, f in ipairs(files) do
+					local filename = tostring(f:filename())
+					if build:target():os() == Platform.OS.windows then
+						if filename:ends_with('.lib') then
+							if kind == 'shared' and filename:starts_with('boost_') then
+								table.append(res, f)
+							elseif kind == 'static' and filename:starts_with('libboost_') then
+								table.append(res, f)
+							else
+								build:debug("Ignore non boost lib", f)
+							end
+						elseif kind == 'shared' and filename:ends_with('.dll') then
+							table.append(runtime_files, f)
+						end
+					elseif tostring(f):ends_with(ext) then
+						build:debug("Select", f, "(ends with '" .. ext .."')")
+						table.append(res, f)
 					else
-						build:debug("Ignore non boost lib", f)
+						build:debug("Ignore", f)
 					end
-				elseif kind == 'shared' and filename:ends_with('.dll') then
-					table.append(runtime_files, f)
 				end
-			elseif tostring(f:path()):ends_with(ext) then
-				build:debug("Select", f, "(ends with '" .. ext .."')")
-				table.append(filtered, f)
-			else
-				build:debug("Ignore", f)
+				return res
 			end
-		end
+		)
 
 		local function arg(name, default)
 			local res = args[component .. '_' .. name]
@@ -164,22 +244,24 @@ function M.find(args)
 			return res
 		end
 
-		local flags = {
+		local wanted_flags = {
 			threading = arg('threading', args.compiler.threading),
 			static_runtime = arg('static_runtime', args.compiler.runtime == 'static'),
 			debug_runtime = arg('debug_runtime', args.compiler.debug_runtime),
 			debug = arg('debug', args.compiler.debug),
 		}
 		local files, selected, unknown = filtered, {}, {}
+		build:debug("Try to filter", table.tostring(files))
 		for _, f in ipairs(files) do
-			local file_flags = extract_flags(f:path())
+			build:debug("Checking file", f)
+			local file_flags = extract_flags_from_filename(f)
 
 			-- TODO: Check against toolset
 			-- TODO: Check the version
 			local check = nil
 			for k, v in pairs(file_flags) do
-				if flags[k] ~= nil then
-					check = flags[k] == v
+				if wanted_flags[k] ~= nil then
+					check = wanted_flags[k] == v
 				end
 				if check == false then
 					build:debug("Ignore", f, "(The", k, "flag",
@@ -188,11 +270,14 @@ function M.find(args)
 				end
 			end
 			if check == true then
+				build:debug('select', f, '(seems to match required flags)')
 				table.append(selected, f)
 			elseif check == nil then
+				build:debug('select', f, '(but no flag has been checked)')
 				table.append(unknown, f)
 			end
 		end
+		build:debug("selected=" .. table.tostring(selected), "unknown=" .. table.tostring(unknown))
 
 		if #selected > 0 then
 			files = selected
@@ -233,6 +318,7 @@ end
 --
 -- @param args
 -- @param args.build Build instance
+-- @param args.components List of boost libraries to build
 -- @param args.name Name of the project (defaults to 'boost')
 -- @param args.version Version to use
 -- @param args.compiler
@@ -242,6 +328,9 @@ end
 -- @param args.zlib Zlib library
 -- @param args.bzip2 BZip2 library
 function M.build(args)
+	if args.components == nil then
+		error("You must provide a list of components to build")
+	end
 	local tarball = 'boost_' .. args.version:gsub('%.', '_') .. '.tar.gz'
 	local url = 'http://sourceforge.net/projects/boost/files/boost/' ..
 	            args.version ..'/' .. tarball .. '/download'
@@ -257,17 +346,33 @@ function M.build(args)
 
 	local bootstrap_command = {
 		'sh', 'bootstrap.sh',
-		'--prefix=' .. tostring(install_dir)
+		'--prefix=' .. tostring(install_dir),
+		'--with-libraries=' .. table.concat(args.components, ',')
 	}
 
-	if args.python ~= nil then
-		-- TODO Add python support
-		--with-python-root=${BUILD_PREFIX}
-		--with-python=${BUILD_PREFIX}/bin/python${PYTHON2_SHORT_VERSION}
-		--with-python-version=${PYTHON2_SHORT_VERSION}
+	local with_python = false
+	for _, c in ipairs(args.components) do
+		if c == 'python' then
+			with_python = true
+		end
 	end
 
-	local bjam = source_dir / 'bjam'
+	if with_python then
+		if args.python == nil then
+			error("You must provide a python library instance in order to build Boost.Python")
+		end
+		Process:check_output({args.python.bundle.executable, '-c', 'print("pif")'})
+		table.extend(
+			bootstrap_command,
+			{
+				'--with-python-root=' .. tostring(args.python.directories[1]),
+				'--with-python=' .. tostring(args.python.bundle.executable:path()),
+				'--with-python-version=' .. args.python.bundle.version,
+			}
+		)
+	end
+
+	local bjam = source_dir / 'b2'
 
 	project:add_step{
 		name = 'bootstrap',
@@ -291,7 +396,7 @@ function M.build(args)
 		'cxxflags=-fPIC',
 		'define=BOOST_ERROR_CODE_HEADER_ONLY=1',
 		'define=BOOST_SYSTEM_NO_DEPRECATED=1',
-		--'dll-path="XXORIGIN/"',
+		'dll-path=' .. tostring(install_dir / 'lib'),
 		'--debug-configuration',
 		--'-j4',
 		'-sBOOST_ROOT=' .. tostring(source_dir),
@@ -320,7 +425,45 @@ function M.build(args)
 		},
 		working_directory = source_dir,
 	}
+	local Library = require('configure.lang.cxx.Library')
+	local res = {}
+	local target_os = args.build:target():os()
+	for _, component in ipairs(components) do
+		local defines = {}
+		local runtime_files = {}
+		local filename = 'boost_' .. component
+		if target_os == Platform.OS.windows then
+			if kind == 'static' then
+				filename = 'lib' .. filename
+			else
+				table.append(
+					runtime_files,
+					project:directory_node{path = 'bin'}:path() / 'filename.dll'
+				)
+			end
+			filename = filename .. '.lib'
+		else
+			if kind == 'static' then
+				filename = 'lib' .. filename .. '.a'
+			elseif target_os == Platform.OS.osx then
+				filename = 'lib' .. filename .. '.dylib'
+			else
+				filename = 'lib' .. filename .. '.so'
+			end
+		end
+		local files = {
+			project:directory_node{path = 'lib'}:path() / filename
+		}
 
+		table.append(res, Library:new{
+			name = "Boost." .. component,
+			include_directories = { project:directory_node{path = 'include'} },
+			files = files,
+			defines = defines,
+			runtime_files = selected_runtime_files,
+		})
+	end
+	return res
 end
 
 return M
