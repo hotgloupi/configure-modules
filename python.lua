@@ -24,6 +24,25 @@ function M.build(args)
 	}:install{
 
 	}
+	local short_version = args.version:sub(1,1) .. '.' .. args.version:sub(3,3)
+	local kind = args.kind or 'static'
+	local lib
+	if kind == 'static' then
+		lib = project:node{path = 'lib/libpython.a'}
+	else
+		lib = project:node{path = 'lib/libpython.so'}
+	end
+	return args.compiler.Library:new{
+		name = 'Python',
+		include_directories = {project:directory_node{path = 'include'}},
+		files = {lib},
+		kind = kind,
+		bundle = {
+			executable = project:node{path = 'bin/python' .. short_version},
+			version = args.version,
+			short_version = short_version,
+		}
+	}
 end
 
 return M
