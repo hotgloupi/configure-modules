@@ -13,8 +13,9 @@ local M = {}
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'static')
 function M.build(args)
+	local kind = args.kind or 'static'
 	local project = require('configure.external').CMakeProject:new(
-		table.update({name = 'zlib', kind = 'static'}, args)
+		table.update({name = 'zlib', kind = kind}, args)
 	):download_tarball{
 		url = 'http://zlib.net/zlib-' .. args.version .. '.tar.gz',
 	}:configure{}:build{}:install{}
