@@ -16,7 +16,7 @@ function M.build(args)
 	local kind = args.kind or 'static'
 	local project = require('configure.external').CMakeProject:new(
 		table.update({name = 'zlib', kind = kind}, args)
-	):download_tarball{
+	):download{
 		url = 'http://zlib.net/zlib-' .. args.version .. '.tar.gz',
 	}:configure{}:build{}:install{}
 

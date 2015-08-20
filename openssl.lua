@@ -15,7 +15,7 @@ local M = {}
 function M.build(args)
 	local project = require('configure.external').AutotoolsProject:new(
 		table.update({name = 'OpenSSL'}, args)
-	):download_tarball{
+	):download{
 		url = 'https://www.openssl.org/source/openssl-' .. args.version .. '.tar.gz',
 	}
 end

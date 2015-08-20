@@ -15,7 +15,7 @@ local M = {}
 function M.build(args)
 	local project = require('configure.external').AutotoolsProject:new(
 		table.update({name = 'bzip2'}, args)
-	):download_tarball{
+	):download{
 		url = 'http://www.bzip.org/' .. args.version .. '/bzip2-' .. args.version ..'.tar.gz',
 	}
 	local sources = {

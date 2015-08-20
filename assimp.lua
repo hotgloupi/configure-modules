@@ -24,7 +24,7 @@ function M.build(args)
 			},
 			args
 		)
-	):download_tarball{
+	):download{
 		url = 'http://sourceforge.net/projects/assimp/files/assimp-'
 		.. tostring(major) .. '.' .. tostring(minor)
 		.. '/assimp-' .. args.version
@@ -44,8 +44,8 @@ function M.build(args)
 		ASSIMP_BUILD_TESTS = false,
 		ASSIMP_NO_EXPORT = true,
 		ASSIMP_DEBUG_POSTFIX = '',
-	},
-	project:configure{}:build{}:install{}
+	}
+	project:configure{variables = configure_variables}:build{}:install{}
 
 	local filename
 	if args.build:target():os() == Platform.OS.windows then

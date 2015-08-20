@@ -13,16 +13,13 @@ local M = {}
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'static')
 function M.build(args)
-	print("HOHO")
 	local kind = args.kind or 'static'
 	local project = require('configure.external').CMakeProject:new(
 		table.update({name = 'SDLImage', kind = kind}, args)
-	):download_tarball{
+	):download{
 		url = 'https://www.libsdl.org/projects/SDL_image/release/SDL2_image-'
 			.. args.version .. '.tar.gz'
 	}
-
-	print("HaHa")
 	local source_dir = project:step_directory('source')
 	local fs = args.compiler.build:fs()
 

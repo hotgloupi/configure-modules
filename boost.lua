@@ -336,7 +336,7 @@ function M.build(args)
 	            args.version ..'/' .. tarball .. '/download'
 	local project = require('configure.external').Project:new(
 		table.update({name = 'boost'}, args)
-	):download_tarball{
+	):download{
 		url = url,
 		filename = tarball,
 	}

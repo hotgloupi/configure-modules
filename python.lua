@@ -15,7 +15,7 @@ local M = {}
 function M.build(args)
 	local project = require('configure.external').AutotoolsProject:new(
 		table.update({name = 'Python'}, args)
-	):download_tarball{
+	):download{
 		url = 'http://www.python.org/ftp/python/' .. args.version .. '/Python-' .. args.version ..'.tgz',
 	}:configure{
 

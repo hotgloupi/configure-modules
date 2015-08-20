@@ -14,7 +14,7 @@ local M = {}
 function M.build(args)
 	local curl = require("configure.external").AutotoolsProject:new(
 		table.update({name = 'cURL'}, args)
-	):download_tarball{
+	):download{
 		url = 'http://curl.haxx.se/download/curl-'.. args.version .. '.tar.gz',
 	}:configure{
 	}:build{
