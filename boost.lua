@@ -361,7 +361,7 @@ function M.build(args)
 		if args.python == nil then
 			error("You must provide a python library instance in order to build Boost.Python")
 		end
-		Process:check_output({args.python.bundle.executable, '-c', 'print("pif")'})
+		--Process:check_output({args.python.bundle.executable, '-c', 'print("pif")'})
 		table.extend(
 			bootstrap_command,
 			{
