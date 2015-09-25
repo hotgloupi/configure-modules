@@ -365,7 +365,7 @@ function M.build(args)
 		table.extend(
 			bootstrap_command,
 			{
-				'--with-python-root=' .. tostring(args.python.directories[1]),
+				'--with-python-root=' .. tostring(args.python.directories[1]:parent_path()),
 				'--with-python=' .. tostring(args.python.bundle.executable:path()),
 				'--with-python-version=' .. args.python.bundle.version,
 			}
