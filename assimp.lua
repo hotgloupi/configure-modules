@@ -66,9 +66,6 @@ function M.build(args)
 			args.build:warning("Multiple library directories found for boost")
 		end
 
-		print(table.tostring(include_directories))
-		print(table.tostring(library_directories))
-
 		table.update(configure_variables, {
 			ASSIMP_ENABLE_BOOST_WORKAROUND = false,
 			Boost_DEBUG = true,
