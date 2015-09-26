@@ -26,43 +26,51 @@ function M.build(args)
 	):download{
 		url = 'https://github.com/bulletphysics/bullet3/archive/' .. args.version ..'.tar.gz',
 	}
-    local configure_variables = {
-		CMAKE_C_COMPILER = args.c_compiler.binary,
-		Boost_DEBUG = true,
-		Boost_DETAILED_FAILURE_MSG = true,
-		Boost_NO_SYSTEM_PATHS = true,
-		Boost_NO_CMAKE = true,
-		Boost_ADDITIONAL_VERSIONS = args.boost.version,
-		ASSIMP_BUILD_ASSIMP_TOOLS = false,
-		ASSIMP_BUILD_STATIC_LIB = kind == 'static',
-		ASSIMP_BUILD_SAMPLES = false,
-		ASSIMP_BUILD_TESTS = false,
-		ASSIMP_NO_EXPORT = true,
-		ASSIMP_DEBUG_POSTFIX = '',
+	local configure_variables = {
+		BUILD_AMD_OPENCL_DEMOS = false,
+		BUILD_BULLET2_DEMOS = false,
+		BUILD_CPU_DEMOS = false,
+		BUILD_DEMOS = false,
+		BUILD_EXTRAS = false,
+		BUILD_INTEL_OPENCL_DEMOS = false,
+		BUILD_MINICL_OPENCL_DEMOS = false,
+		BUILD_MULTITHREADING = true,
+		BUILD_NVIDIA_OPENCL_DEMOS = false,
+		BUILD_OPENGL3_DEMOS = false,
+		BUILD_SHARED_LIBS = kind == 'shared',
+		BUILD_UNIT_TESTS = false,
+		CMAKE_BUILD_TYPE = 'Release',
+		INSTALL_EXTRA_LIBS = false,
+		INSTALL_LIBS = true,
+		USE_DX11 = false,
+		USE_GLUT = false,
+		USE_GRAPHICAL_BENCHMARK = false,
+		USE_MSVC_RUNTIME_LIBRARY_DLL = true,
 	}
 	project:configure{variables = configure_variables}:build{}:install{}
 
-	local filename
-	if args.build:target():os() == Platform.OS.windows then
-		if kind == 'static' then
-			filename = 'assimp.lib'
+	local libraries = {}
+	for _, lib in ipairs({'BulletDynamics', 'BulletCollision', 'BulletSoftBody', 'LinearMath'}) do
+		local prefix = ''
+		local ext = nil
+		if args.build:target():os() == Platform.OS.windows then
+			ext = '.lib'
 		else
-			filename = 'assimp.lib'
+			prefix = 'lib'
+			if kind == 'static' then
+				ext = '.a'
+			else
+				ext = '.so'
+			end
 		end
-	else
-		if kind == 'static' then
-			filename = 'libassimp.a'
-		else
-			filename = 'libassimp.so'
-		end
+		table.append(libraries, project:node{path = 'lib/' .. prefix .. lib .. ext})
 	end
-	local lib = project:node{path = 'lib/' .. filename}
 	return args.compiler.Library:new{
 		name = project.name,
 		include_directories = {
 			project:directory_node{path = 'include'}
 		},
-		files = {lib},
+		files = libraries,
 		kind = kind,
 	}
 end
