@@ -20,7 +20,8 @@ function M.build(args)
 			{
 				name = 'Assimp',
 				kind = kind,
-				source_directory = 'source/assimp-' .. args.version .. '/assimp-' .. args.version,
+				extract_directory = 'source',
+				source_directory = 'source/assimp-' .. args.version,
 			},
 			args
 		)
