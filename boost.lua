@@ -344,32 +344,60 @@ function M.build(args)
 	local install_dir = project:step_directory('install')
 	local source_dir = project:step_directory('source')
 
+	-- We exclude python from the list of --with-libraries.
+	-- the bootstrap.sh script will generate a python configuration
+	-- which is incomplete (missing include dir).
+	-- The problem is that a user-config will not replace or augment this
+	-- generated conf, but boost.build will instead try to figure out what is
+	-- the correct include dir, missing the 'm' suffix when pymalloc was
+	-- enabled.
+	-- Consequently, we remove python here, but generate a complete and correct
+	-- user-config.jam to describe the python install we want to link against.
+	local with_python = false
+	local with_libraries = {}
+	for _, component in ipairs(args.components) do
+		if component == 'python' then
+			with_python = true
+		else
+			table.append(with_libraries, component)
+		end
+	end
+
 	local bootstrap_command = {
 		'sh', 'bootstrap.sh',
 		'--prefix=' .. tostring(install_dir),
-		'--with-libraries=' .. table.concat(args.components, ',')
+		'--with-libraries=' .. table.concat(with_libraries, ',')
 	}
 
-	local with_python = false
-	for _, c in ipairs(args.components) do
-		if c == 'python' then
-			with_python = true
-		end
-	end
 
 	if with_python then
 		if args.python == nil then
 			error("You must provide a python library instance in order to build Boost.Python")
 		end
-		--Process:check_output({args.python.bundle.executable, '-c', 'print("pif")'})
-		table.extend(
-			bootstrap_command,
-			{
-				'--with-python-root=' .. tostring(args.python.directories[1]:parent_path()),
-				'--with-python=' .. tostring(args.python.bundle.executable:path()),
-				'--with-python-version=' .. args.python.bundle.version,
+		-- This is what we would like to do instead of generating ourself the user-config.jam
+		--table.extend(
+		--	bootstrap_command,
+		--	{
+		--		'--with-python-root=' .. tostring(args.python.directories[1]:parent_path()),
+		--		'--with-python=' .. tostring(args.python.bundle.executable:path()),
+		--		'--with-python-version=' .. args.python.bundle.version:sub(1, 3),
+		--	}
+		--)
+		project:add_step{
+			name = 'gen-user-config',
+			directory = source_dir,
+			targets = {
+				[0] = {
+					{
+						args.build:configure_program(), '-E', 'lua-function',
+						Filesystem.current_script():parent_path() / 'boost-gen-user-config.lua',
+						'main',
+						source_dir,
+						args.python.bundle.executable:path(),
+					}
+				}
 			}
-		)
+		}
 	end
 
 	local bjam = source_dir / 'b2'
@@ -389,6 +417,7 @@ function M.build(args)
 		'--disable-icu',
 		'--prefix=' .. tostring(install_dir),
 		'--layout=system',
+        '--user-config=' .. tostring(source_dir / 'user-config.jam'),
 		'link=static',
 		'link=shared',
 		'variant=release',
@@ -403,6 +432,9 @@ function M.build(args)
 		'--reconfigure',
 		'-d+2',
 	}
+    if with_python then
+        table.extend(install_command, {'python='..args.python.bundle.version:sub(1, 3)})
+    end
 	if args.zlib ~= nil then
 		table.extend(install_command, {
 			'-sZLIB_INCLUDE=' .. tostring(args.zlib.include_directories[1]:path()),
