@@ -3,6 +3,8 @@
 
 local M = {}
 
+local tools = require('configure.tools')
+
 --- Build Assimp library
 --
 -- @param args
@@ -34,18 +36,50 @@ function M.build(args)
 	}
     local configure_variables = {
 		CMAKE_C_COMPILER = args.c_compiler.binary,
-		Boost_DEBUG = true,
-		Boost_DETAILED_FAILURE_MSG = true,
-		Boost_NO_SYSTEM_PATHS = true,
-		Boost_NO_CMAKE = true,
-		Boost_ADDITIONAL_VERSIONS = args.boost.version,
 		ASSIMP_BUILD_ASSIMP_TOOLS = false,
+		BUILD_SHARED_LIBS = kind ~= 'static',
 		ASSIMP_BUILD_STATIC_LIB = kind == 'static',
 		ASSIMP_BUILD_SAMPLES = false,
 		ASSIMP_BUILD_TESTS = false,
 		ASSIMP_NO_EXPORT = true,
 		ASSIMP_DEBUG_POSTFIX = '',
 	}
+	if args.boost ~= nil then
+		local include_directories = {}
+		local library_directories = {}
+		for _, t in ipairs(args.boost) do
+			table.extend(include_directories, t.include_directories)
+			table.extend(library_directories, t.directories)
+		end
+		include_directories = tools.unique(include_directories)
+		library_directories = tools.unique(library_directories)
+		if #include_directories == 0 then
+			error("Cannot find any boost include directory")
+		end
+		if #library_directories == 0 then
+			error("Cannot find any boost library directory")
+		end
+		if #include_directories > 1 then
+			args.build:warning("Multiple include directories found for boost")
+		end
+		if #library_directories > 1 then
+			args.build:warning("Multiple library directories found for boost")
+		end
+
+		print(table.tostring(include_directories))
+		print(table.tostring(library_directories))
+
+		table.update(configure_variables, {
+			ASSIMP_ENABLE_BOOST_WORKAROUND = false,
+			Boost_DEBUG = true,
+			Boost_DETAILED_FAILURE_MSG = true,
+			Boost_NO_SYSTEM_PATHS = true,
+			Boost_NO_CMAKE = true,
+			Boost_ADDITIONAL_VERSIONS = args.boost.version,
+			BOOST_INCLUDEDIR = include_directories[1],
+			BOOST_LIBRARYDIR = library_directories[1],
+		})
+	end
 	project:configure{variables = configure_variables}:build{}:install{}
 
 	local filename
@@ -69,7 +103,7 @@ function M.build(args)
 			project:directory_node{path = 'include'}
 		},
 		files = {lib},
-		kind = kind,
+		KInd = kind,
 	}
 end
 
