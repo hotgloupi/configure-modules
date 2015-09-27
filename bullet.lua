@@ -68,7 +68,7 @@ function M.build(args)
 	return args.compiler.Library:new{
 		name = project.name,
 		include_directories = {
-			project:directory_node{path = 'include'}
+			project:directory_node{path = 'include/bullet'}
 		},
 		files = libraries,
 		kind = kind,
