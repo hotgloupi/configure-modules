@@ -23,15 +23,15 @@ function M.build(args)
 	local filename
 	if args.build:target():os() == Platform.OS.windows then
 		if kind == 'static' then
-			filename = 'SDL.lib'
+			filename = 'SDL2.lib'
 		else
-			filename = 'SDL.lib'
+			filename = 'SDL2.lib'
 		end
 	else
 		if kind == 'static' then
-			filename = 'libSDL.a'
+			filename = 'libSDL2.a'
 		else
-			filename = 'libSDL.so'
+			filename = 'libSDL2.so'
 		end
 	end
 	local lib = project:node{path = 'lib/' .. filename}
