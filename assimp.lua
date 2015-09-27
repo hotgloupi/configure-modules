@@ -9,7 +9,7 @@ local tools = require('configure.tools')
 --
 -- @param args
 -- @param args.build Build instance
--- @param args.name Name of the project (defaults to 'zlib')
+-- @param args.name Name of the project (defaults to 'Assimp')
 -- @param args.version Version to use
 -- @param args.compiler
 -- @param args.install_directory
@@ -44,15 +44,18 @@ function M.build(args)
 		ASSIMP_NO_EXPORT = true,
 		ASSIMP_DEBUG_POSTFIX = '',
 	}
+	local sources = {}
 	if args.boost ~= nil then
 		local include_directories = {}
 		local library_directories = {}
 		for _, t in ipairs(args.boost) do
 			table.extend(include_directories, t.include_directories)
 			table.extend(library_directories, t.directories)
+			table.extend(sources, t.files)
 		end
 		include_directories = tools.unique(include_directories)
 		library_directories = tools.unique(library_directories)
+		sources = tools.unique(sources)
 		if #include_directories == 0 then
 			error("Cannot find any boost include directory")
 		end
@@ -77,7 +80,7 @@ function M.build(args)
 			BOOST_LIBRARYDIR = library_directories[1],
 		})
 	end
-	project:configure{variables = configure_variables}:build{}:install{}
+	project:configure{variables = configure_variables, sources = sources}:build{}:install{}
 
 	local filename
 	if args.build:target():os() == Platform.OS.windows then

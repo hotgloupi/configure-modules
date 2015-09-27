@@ -9,6 +9,9 @@ local M = {}
 -- @param args.build Build instance
 -- @param args.name Name of the project (defaults to 'Python')
 -- @param args.version Version to use
+-- @param args.zlib build zlib module with this library
+-- @param args.bzip2 build bzip2 module with this library
+-- @param args.openssl build openssl module with this library
 -- @param args.compiler
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'shared')
@@ -17,8 +20,13 @@ function M.build(args)
 		table.update({name = 'Python'}, args)
 	):download{
 		url = 'http://www.python.org/ftp/python/' .. args.version .. '/Python-' .. args.version ..'.tgz',
-	}:configure{
-
+	}
+	local sources = {}
+	table.extend(sources, args.zlib and args.zlib.files or {})
+	table.extend(sources, args.bzip2 and args.bzip2.files or {})
+	table.extend(sources, args.openssl and args.openssl.files or {})
+	project:configure{
+		sources = sources,
 	}:build{
 
 	}:install{

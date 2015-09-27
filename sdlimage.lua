@@ -40,6 +40,10 @@ function M.build(args)
 		'IMG_xv.c',
 		'IMG_xxx.c',
 	}
+	project:add_step {
+		name = 'build',
+		sources = args.sdl.files,
+	}
 	local source_nodes = {}
 	for _, filename in ipairs(sources) do
 

@@ -44,7 +44,10 @@ function M.build(args)
 	configure_variables['FREETYPE_LIBRARY'] = args.freetype2.files[1]
 	configure_variables['BUILD_SHARED_LIBS'] = kind == 'shared'
 	configure_variables['CMAKE_INSTALL_LIBDIR'] = 'lib' -- Prevent arch subdirectory
-	project:configure{variables = configure_variables}
+	project:configure{
+		variables = configure_variables,
+		sources = args.freetype2.files
+	}
 	project:build{}:install{}
 
 	local libraries = {}

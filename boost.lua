@@ -369,7 +369,6 @@ function M.build(args)
 		'--with-libraries=' .. table.concat(with_libraries, ',')
 	}
 
-
 	if with_python then
 		if args.python == nil then
 			error("You must provide a python library instance in order to build Boost.Python")
@@ -396,12 +395,12 @@ function M.build(args)
 						args.python.bundle.executable:path(),
 					}
 				}
-			}
+			},
+			sources = {args.python.bundle.executable},
 		}
 	end
 
 	local bjam = source_dir / 'b2'
-
 	project:add_step{
 		name = 'bootstrap',
 		directory = source_dir,
@@ -409,7 +408,10 @@ function M.build(args)
 			[0] = {bootstrap_command},
 		},
 		working_directory = source_dir,
+		sources = sources,
 	}
+
+	local sources = {}
 
 	local install_command = {
 		tostring(bjam), 'install',
@@ -434,6 +436,7 @@ function M.build(args)
 	}
     if with_python then
         table.extend(install_command, {'python='..args.python.bundle.version:sub(1, 3)})
+		table.extend(sources, args.python.files)
     end
 	if args.zlib ~= nil then
 		table.extend(install_command, {
@@ -441,6 +444,7 @@ function M.build(args)
 			'-sZLIB_LIBPATH=' .. tostring(args.zlib.files[1]:path():parent_path()),
 			'-sZLIB_BINARY=z'
 		})
+		table.extend(sources, args.zlib.files)
 	end
 	if args.bzip2 ~= nil then
 		table.extend(install_command, {
@@ -448,6 +452,7 @@ function M.build(args)
 			'-sBZIP2_LIBPATH=' .. tostring(args.bzip2.files[1]:path():parent_path()),
 			'-sBZIP2_BINARY=bzip2'
 		})
+		table.extend(sources, args.bzip2.files)
 	end
 	project:add_step{
 		name = 'install',
@@ -456,6 +461,7 @@ function M.build(args)
 			[0] = {install_command},
 		},
 		working_directory = source_dir,
+		sources = sources,
 	}
 	local Library = require('configure.lang.cxx.Library')
 	local res = {}
@@ -484,7 +490,7 @@ function M.build(args)
 			end
 		end
 		local files = {
-			project:directory_node{path = 'lib'}:path() / filename
+			project:node{path = 'lib/' .. filename},
 		}
 
 		table.append(res, Library:new{
