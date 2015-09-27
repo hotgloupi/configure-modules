@@ -26,15 +26,18 @@ function M.build(args)
 	}
 	local short_version = args.version:sub(1,1) .. '.' .. args.version:sub(3,3)
 	local kind = args.kind or 'static'
+	local tag = 'm'
 	local lib
 	if kind == 'static' then
-		lib = project:node{path = 'lib/libpython.a'}
+		lib = project:node{path = 'lib/libpython' .. short_version .. tag .. '.a'}
 	else
 		lib = project:node{path = 'lib/libpython.so'}
 	end
 	return args.compiler.Library:new{
 		name = 'Python',
-		include_directories = {project:directory_node{path = 'include'}},
+		include_directories = {
+			project:directory_node{path = 'include/python' .. short_version .. tag}
+		},
 		files = {lib},
 		kind = kind,
 		bundle = {
