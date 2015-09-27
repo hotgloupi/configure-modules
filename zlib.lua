@@ -34,7 +34,7 @@ function M.build(args)
 			filename = 'libz.so'
 		end
 	end
-	local lib = project:node{path = 'lib/' .. filename .. '.so'}
+	local lib = project:node{path = 'lib/' .. filename}
 	return args.compiler.Library:new{
 		name = project.name,
 		include_directories = {
