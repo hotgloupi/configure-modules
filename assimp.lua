@@ -100,7 +100,7 @@ function M.build(args)
 			project:directory_node{path = 'include'}
 		},
 		files = {lib},
-		KInd = kind,
+		kind = kind,
 	}
 end
 
