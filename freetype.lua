@@ -36,7 +36,7 @@ function M.build(args)
 	project:build{}:install{}
 
 	local libraries = {}
-	for _, lib in ipairs({'freetype2'}) do
+	for _, lib in ipairs({'freetype'}) do
 		local prefix = ''
 		local ext = nil
 		if args.build:target():os() == Platform.OS.windows then
@@ -54,7 +54,7 @@ function M.build(args)
 	return args.compiler.Library:new{
 		name = project.name,
 		include_directories = {
-			project:directory_node{path = 'include'}
+			project:directory_node{path = 'include/freetype2'}
 		},
 		files = libraries,
 		kind = kind,
