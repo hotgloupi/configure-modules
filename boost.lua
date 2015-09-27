@@ -460,7 +460,7 @@ function M.build(args)
 	local Library = require('configure.lang.cxx.Library')
 	local res = {}
 	local target_os = args.build:target():os()
-	for _, component in ipairs(components) do
+	for _, component in ipairs(args.components) do
 		local defines = {}
 		local runtime_files = {}
 		local filename = 'boost_' .. component
