@@ -79,8 +79,10 @@ function M.build(args)
 		kind = args.kind or 'static',
 		object_directory = project:step_directory('build'),
 		directory = project:step_directory('install') / 'lib',
-		include_directories = table.update(
-			{project:step_directory('source')},
+		include_directories = table.extend(
+			{
+				project:step_directory('source'),
+			},
 			args.sdl.include_directories
 		)
 	}
