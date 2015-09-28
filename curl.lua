@@ -21,10 +21,11 @@ function M.build(args)
 	}:install{
 	}
 	local kind = args.kind or 'static'
+	local lib = nil
 	if kind == 'static' then
-		local lib = curl:node{path = 'lib/libcurl.a'}
+		lib = curl:node{path = 'lib/libcurl.a'}
 	else
-		local lib = curl:node{path = 'lib/libcurl.so'}
+		lib = curl:node{path = 'lib/libcurl.so'}
 	end
 	return args.compiler.Library:new{
 		name = 'cURL',
@@ -32,6 +33,7 @@ function M.build(args)
 		files = {lib},
 		kind = kind,
 		install_node = curl:stamp_node('install'),
+		defines = kind == 'static' and {{'CURL_STATICLIB',1}} or {},
 	}
 end
 

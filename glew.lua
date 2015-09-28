@@ -39,9 +39,24 @@ function M.build(args)
 		BUILD_SHARED_LIBS = kind ~= 'static',
 	}
 	project:configure{variables = configure_variables}:build{}:install{}
+	local filename
+	if args.build:target():os() == Platform.OS.windows then
+		if kind == 'static' then
+			filename = 'GLEW.lib'
+		else
+			filename = 'GLEW.lib'
+		end
+	else
+		if kind == 'static' then
+			filename = 'libGLEW.a'
+		else
+			filename = 'libGLEW.so'
+		end
+	end
+	local lib = project:node{path = 'lib/' .. filename}
 	return args.compiler.Library:new{
 		name = project.name,
-		files = {},
+		files = {lib},
 		include_directories = {
 			project:directory_node{path = 'include'},
 		},
