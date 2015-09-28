@@ -52,7 +52,8 @@ function M.build(args)
 			executable = project:node{path = 'bin/python' .. short_version},
 			version = args.version,
 			short_version = short_version,
-		}
+		},
+		install_node = project:stamp_node('install'),
 	}
 end
 

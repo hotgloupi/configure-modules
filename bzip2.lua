@@ -46,7 +46,8 @@ function M.build(args)
 		directory = project:step_directory('install') / 'lib',
 		include_directories = {
 			project:step_directory('source'),
-		}
+		},
+		install_node = project:stamp_node('install'),
 	}
 end
 

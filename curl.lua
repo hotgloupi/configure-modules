@@ -31,6 +31,7 @@ function M.build(args)
 		include_directories = {curl:directory_node{path = 'include'}},
 		files = {lib},
 		kind = kind,
+		install_node = curl:stamp_node('install'),
 	}
 end
 

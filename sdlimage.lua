@@ -84,11 +84,10 @@ function M.build(args)
 		object_directory = project:step_directory('build'),
 		directory = project:step_directory('install') / 'lib',
 		include_directories = table.extend(
-			{
-				project:step_directory('source'),
-			},
+			{project:step_directory('source')},
 			args.sdl.include_directories
-		)
+		),
+		install_node = project:stamp_node('install'),
 	}
 end
 

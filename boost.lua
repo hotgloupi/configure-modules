@@ -499,6 +499,7 @@ function M.build(args)
 			files = files,
 			defines = defines,
 			runtime_files = selected_runtime_files,
+			install_node = project:stamp_node('install'),
 		})
 	end
 	return res

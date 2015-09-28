@@ -28,6 +28,7 @@ function M.build(args)
 		include_directories = {
 			project:directory_node{path = 'include'},
 		},
+		install_node = project:stamp_node('install'),
 	}
 end
 

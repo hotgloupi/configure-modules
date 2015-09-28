@@ -104,6 +104,7 @@ function M.build(args)
 		},
 		files = {lib},
 		kind = kind,
+		install_node = project:stamp_node('install'),
 	}
 end
 

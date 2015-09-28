@@ -46,6 +46,7 @@ function M.build(args)
 			project:directory_node{path = 'include'},
 		},
 		defines = kind == 'static' and {'GLEW_NO_GLU', 'GLEW_STATIC'} or {},
+		install_node = project:stamp_node('install'),
 	}
 end
 
