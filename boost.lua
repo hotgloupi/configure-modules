@@ -324,6 +324,7 @@ end
 -- @param args.compiler
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'static')
+-- @param args.COMPONENT_kind Specify the kind for a specific component (defaults to args.kind)
 -- @param args.python Python library to use
 -- @param args.zlib Zlib library
 -- @param args.bzip2 BZip2 library
@@ -466,7 +467,9 @@ function M.build(args)
 	local Library = require('configure.lang.cxx.Library')
 	local res = {}
 	local target_os = args.build:target():os()
+	local kind = args.kind or 'static'
 	for _, component in ipairs(args.components) do
+		local kind = args[component .. '_kind'] or kind
 		local defines = {}
 		local runtime_files = {}
 		local filename = 'boost_' .. component
@@ -500,6 +503,7 @@ function M.build(args)
 			defines = defines,
 			runtime_files = selected_runtime_files,
 			install_node = project:stamp_node('install'),
+			kind = kind,
 		})
 	end
 	return res
