@@ -29,6 +29,7 @@ function M.build(args)
 			project:directory_node{path = 'include'},
 		},
 		install_node = project:stamp_node('install'),
+		kind = 'static',
 	}
 end
 

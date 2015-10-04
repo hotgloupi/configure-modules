@@ -46,6 +46,7 @@ function M.find(args)
 		name = 'OpenGL',
 		include_directories = {},
 		files = libraries,
+		kind = 'shared',
 	}
 end
 
