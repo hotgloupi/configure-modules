@@ -309,6 +309,7 @@ function M.find(args)
 			files = files,
 			defines = defines,
 			runtime_files = selected_runtime_files,
+			kind = kind,
 		})
 	end
 	return res
