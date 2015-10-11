@@ -26,21 +26,7 @@ function M.find(args)
 	local search_directories = args.compiler:system_library_directories()
 	local libraries = {}
 	for _, filename in ipairs(library_filenames) do
-		local found = false
-		local file = nil
-		for _, dir in ipairs(search_directories) do
-			file = dir / filename
-			if file:exists() then
-				table.append(libraries, file)
-				found = true
-				build:debug("Found OpenGL library '" .. tostring(file) .. "'")
-				break
-			end
-		end
-		if not found then
-			error("Couldn't find '" .. filename .. "' in " ..
-			      table.tostring(search_directories))
-		end
+		table.append(libraries, args.compiler:find_system_library_filename(filename))
 	end
 	return args.compiler.Library:new{
 		name = 'OpenGL',
