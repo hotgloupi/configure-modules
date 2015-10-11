@@ -16,6 +16,7 @@ local M = {}
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'shared')
 function M.build(args)
+	local kind = args.kind or 'shared'
 	local project = require('configure.external').AutotoolsProject:new(
 		table.update({name = 'Python'}, args)
 	):download{
@@ -25,22 +26,56 @@ function M.build(args)
 	table.extend(sources, args.zlib and args.zlib.files or {})
 	table.extend(sources, args.bzip2 and args.bzip2.files or {})
 	table.extend(sources, args.openssl and args.openssl.files or {})
-	project:configure{
-		sources = sources,
-	}:build{
-
-	}:install{
-
+	local configure_args = {
+		'--without-suffix',
 	}
+	local configure_env = {}
+
+	if args.build:target():is_osx() then
+		table.extend(configure_args, {
+			'--disable-framework',
+			'--disable-universalsdk',
+			'--enable-ipv6',
+			'--with-system-expat',
+			'--without-threads',
+			--'--with-system-ffi',
+			'--without-ensurepip',
+		})
+	end
+
+	if args.compiler.name == 'clang' then
+		table.append(configure_args, '--without-gcc')
+	end
+
 	local short_version = args.version:sub(1,1) .. '.' .. args.version:sub(3,3)
 	local kind = args.kind or 'static'
 	local tag = 'm'
-	local lib
-	if kind == 'static' then
-		lib = project:node{path = 'lib/libpython' .. short_version .. tag .. '.a'}
-	else
-		lib = project:node{path = 'lib/libpython.so'}
+
+	local build_args = {}
+	if kind == 'shared' then
+		table.append(configure_args, '--enable-shared')
+		if args.build:target():is_osx() then
+			configure_env['LDFLAGS'] = '-Wl,-search_paths_first' -- http://bugs.python.org/issue11445
+			-- We replace the default flags for linking python.exe
+			-- By default it's "-lpythonX.X.a -L.", which link with shared library first
+			-- on OSX. However, python.exe is used to create python extensions,
+			-- and symbols are looked up in the python.exe binary (with -bundle_loader)
+			-- This is why we need to include all symbols in the python.exe.
+			table.append(build_args, 'BLDLIBRARY=libpython' .. short_version .. tag .. '.a')
+		end
 	end
+
+	project:configure{
+		args = configure_args,
+		sources = sources,
+		env = configure_env,
+	}
+	project:build{args = build_args}
+
+	project:install{}
+
+	local lib = args.compiler:canonical_library_filename('python' .. short_version .. tag, kind)
+	lib = project:node{path = 'lib/' .. lib}
 	return args.compiler.Library:new{
 		name = 'Python',
 		include_directories = {
