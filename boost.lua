@@ -518,7 +518,7 @@ function M.build(args)
 			else
 				table.append(
 					runtime_files,
-					project:directory_node{path = 'bin'}:path() / 'filename.dll'
+					project:directory_node{path = 'bin'}:path() / filename .. '.dll'
 				)
 			end
 			filename = filename .. '.lib'
