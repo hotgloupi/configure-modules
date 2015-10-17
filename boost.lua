@@ -384,22 +384,22 @@ function M.build(args)
 				'--with-python-version=' .. args.python.bundle.version:sub(1, 3),
 			}
 		)
-		--project:add_step{
-		--	name = 'gen-user-config',
-		--	directory = source_dir,
-		--	targets = {
-		--		[0] = {
-		--			{
-		--				args.build:configure_program(), '-E', 'lua-function',
-		--				Filesystem.current_script():parent_path() / 'boost-gen-user-config.lua',
-		--				'main',
-		--				source_dir,
-		--				args.python.bundle.executable:path(),
-		--			}
-		--		}
-		--	},
-		--	sources = {args.python.bundle.executable},
-		--}
+		project:add_step{
+			name = 'gen-user-config',
+			directory = source_dir,
+			targets = {
+				[0] = {
+					{
+						args.build:configure_program(), '-E', 'lua-function',
+						Filesystem.current_script():parent_path() / 'boost-gen-user-config.lua',
+						'main',
+						source_dir,
+						args.python.bundle.executable:path(),
+					}
+				}
+			},
+			sources = {args.python.bundle.executable},
+		}
 	end
 
 	local bjam = source_dir / 'b2'
@@ -421,7 +421,7 @@ function M.build(args)
 		'--disable-icu',
 		'--prefix=' .. tostring(install_dir),
 		'--layout=system',
-        --'--user-config=' .. tostring(source_dir / 'user-config.jam'),
+        '--user-config=' .. tostring(source_dir / 'user-config.jam'),
 		'link=static',
 		'link=shared',
 		'variant=release',
