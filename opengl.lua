@@ -23,10 +23,9 @@ function M.find(args)
 		table.append(library_filenames, 'libGL.so')
 	end
 
-	local search_directories = args.compiler:system_library_directories()
 	local libraries = {}
 	for _, filename in ipairs(library_filenames) do
-		table.append(libraries, args.compiler:find_system_library_filename(filename))
+		table.append(libraries, args.compiler:find_system_library_file_from_filename(filename))
 	end
 	return args.compiler.Library:new{
 		name = 'OpenGL',

@@ -89,7 +89,7 @@ function M.build(args)
 	local files = {}
 	if args.compiler.build:target():is_osx() then
 		for _, file in ipairs({'IOKit', 'Carbon'}) do
-			table.append(files, args.compiler:find_system_library_filename(file))
+			table.append(files, args.compiler:find_system_library_file_from_filename(file))
 		end
 	end
 
