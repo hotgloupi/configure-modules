@@ -417,7 +417,7 @@ function M.build(args)
 
 	local install_command = {
 		tostring(bjam), 'install',
-		'--without-mpi',
+		'toolset=' .. args.compiler.name,
 		'--disable-icu',
 		'--prefix=' .. tostring(install_dir),
 		'--layout=system',
@@ -437,6 +437,18 @@ function M.build(args)
 		'-d+2',
 		'include=' .. tostring(args.python.include_directories[1]:path()),
 	}
+
+	if args.compiler.standard then
+		table.append(install_command, 'cxxflags=-std=' .. args.compiler.standard)
+	end
+
+	if args.compiler.standard_library then
+		table.extend(install_command, {
+			'cxxflags=-stdlib=' .. args.compiler.standard_library,
+			'linkflags=-stdlib=' .. args.compiler.standard_library,
+		})
+	end
+
     if with_python then
         table.extend(install_command, {'python='..args.python.bundle.version:sub(1, 3)})
 		table.extend(sources, args.python.files)
