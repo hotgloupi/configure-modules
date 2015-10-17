@@ -506,7 +506,10 @@ function M.build(args)
 	local kind = args.kind or 'static'
 	for _, component in ipairs(args.components) do
 		local kind = args[component .. '_kind'] or kind
-		local defines = {}
+		local defines = {
+			{'BOOST_ERROR_CODE_HEADER_ONLY', 1},
+			{'BOOST_SYSTEM_NO_DEPRECATED', 1},
+		}
 		local runtime_files = {}
 		local filename = 'boost_' .. component
 		if target_os == Platform.OS.windows then
