@@ -368,7 +368,7 @@ function M.build(args)
 	local bootstrap_command = {
 		'sh', 'bootstrap.sh',
 		'--prefix=' .. tostring(install_dir),
-		'--with-libraries=' .. table.concat(with_libraries, ',')
+		'--with-libraries=' .. table.concat(args.components, ',')
 	}
 
 	if with_python then
@@ -376,30 +376,30 @@ function M.build(args)
 			error("You must provide a python library instance in order to build Boost.Python")
 		end
 		-- This is what we would like to do instead of generating ourself the user-config.jam
-		--table.extend(
-		--	bootstrap_command,
-		--	{
-		--		'--with-python-root=' .. tostring(args.python.directories[1]:parent_path()),
-		--		'--with-python=' .. tostring(args.python.bundle.executable:path()),
-		--		'--with-python-version=' .. args.python.bundle.version:sub(1, 3),
-		--	}
-		--)
-		project:add_step{
-			name = 'gen-user-config',
-			directory = source_dir,
-			targets = {
-				[0] = {
-					{
-						args.build:configure_program(), '-E', 'lua-function',
-						Filesystem.current_script():parent_path() / 'boost-gen-user-config.lua',
-						'main',
-						source_dir,
-						args.python.bundle.executable:path(),
-					}
-				}
-			},
-			sources = {args.python.bundle.executable},
-		}
+		table.extend(
+			bootstrap_command,
+			{
+				'--with-python-root=' .. tostring(args.python.directories[1]:parent_path()),
+				'--with-python=' .. tostring(args.python.bundle.executable:path()),
+				'--with-python-version=' .. args.python.bundle.version:sub(1, 3),
+			}
+		)
+		--project:add_step{
+		--	name = 'gen-user-config',
+		--	directory = source_dir,
+		--	targets = {
+		--		[0] = {
+		--			{
+		--				args.build:configure_program(), '-E', 'lua-function',
+		--				Filesystem.current_script():parent_path() / 'boost-gen-user-config.lua',
+		--				'main',
+		--				source_dir,
+		--				args.python.bundle.executable:path(),
+		--			}
+		--		}
+		--	},
+		--	sources = {args.python.bundle.executable},
+		--}
 	end
 
 	local bjam = source_dir / 'b2'
@@ -421,7 +421,7 @@ function M.build(args)
 		'--disable-icu',
 		'--prefix=' .. tostring(install_dir),
 		'--layout=system',
-        '--user-config=' .. tostring(source_dir / 'user-config.jam'),
+        --'--user-config=' .. tostring(source_dir / 'user-config.jam'),
 		'link=static',
 		'link=shared',
 		'variant=release',
@@ -435,6 +435,7 @@ function M.build(args)
 		'-sBOOST_ROOT=' .. tostring(source_dir),
 		'--reconfigure',
 		'-d+2',
+		'include=' .. tostring(args.python.include_directories[1]:path()),
 	}
     if with_python then
         table.extend(install_command, {'python='..args.python.bundle.version:sub(1, 3)})
