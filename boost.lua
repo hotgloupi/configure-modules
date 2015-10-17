@@ -469,11 +469,33 @@ function M.build(args)
 		})
 		table.extend(sources, args.bzip2.files)
 	end
+
+	for _, component in ipairs(args.components) do
+		table.append(install_command, '--with-' .. component)
+	end
+	local install_commands = { install_command }
+
+	-- dll-path is not used on OSX
+	if args.build:target():is_osx() then
+		for _, component in ipairs(args.components) do
+			local kind = args[component .. '_kind'] or kind
+			if kind == 'shared' then
+				local filename = 'libboost_' .. component .. '.dylib'
+				table.append(
+					install_commands,
+					{'install_name_tool', '-id', '@rpath/' .. filename, project:node{path = 'lib/' .. filename}}
+				)
+			end
+		end
+	end
+
+
+
 	project:add_step{
 		name = 'install',
 		directory = source_dir,
 		targets = {
-			[0] = {install_command},
+			[0] = install_commands,
 		},
 		working_directory = source_dir,
 		sources = sources,
