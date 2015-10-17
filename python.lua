@@ -36,7 +36,7 @@ function M.build(args)
 			'--disable-framework',
 			'--disable-universalsdk',
 			'--enable-ipv6',
-			'--with-system-expat',
+			--'--with-system-expat',
 			'--without-threads',
 			--'--with-system-ffi',
 			'--without-ensurepip',
