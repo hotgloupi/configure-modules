@@ -12,27 +12,29 @@ local M = {}
 -- @param args.compiler The compiler to use
 -- @param[opt] args.kind 'shared' or 'static' (defaults to 'static')
 function M.build(args)
-	local curl = require("configure.external").AutotoolsProject:new(
+	local project = require("configure.external").AutotoolsProject:new(
 		table.update({name = 'cURL'}, args)
 	):download{
 		url = 'http://curl.haxx.se/download/curl-'.. args.version .. '.tar.gz',
 	}:configure{
+		args = {
+			'--without-ssl',
+			'--disable-ldap',
+			'--disable-ldaps',
+		}
 	}:build{
 	}:install{
 	}
 	local kind = args.kind or 'static'
-	local lib = nil
-	if kind == 'static' then
-		lib = curl:node{path = 'lib/libcurl.a'}
-	else
-		lib = curl:node{path = 'lib/libcurl.so'}
-	end
+	local lib = project:node{
+		path = 'lib/' .. args.compiler:canonical_library_filename('curl', kind)
+	}
 	return args.compiler.Library:new{
 		name = 'cURL',
-		include_directories = {curl:directory_node{path = 'include'}},
+		include_directories = {project:directory_node{path = 'include'}},
 		files = {lib},
 		kind = kind,
-		install_node = curl:stamp_node('install'),
+		install_node = project:stamp_node('install'),
 		defines = kind == 'static' and {{'CURL_STATICLIB',1}} or {},
 	}
 end
