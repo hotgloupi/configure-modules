@@ -13,6 +13,7 @@ local M = {}
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'static')
 -- @tparam bool args.dynapi Use dynamic api magic (defaults to true)
+-- @tparam bool args.directx enable directx support (defaults to true on windows)
 -- @tparam table args.with Configuration options
 -- @tparam bool args.with.atomic enable atomic support (defaults to true)
 -- @tparam bool args.with.audio enable audio support (defaults to true)
@@ -61,7 +62,12 @@ function M.build(args)
 		vars['SDL_' .. k:upper()] = v
 	end
 
-	vars['SDL_SHARED'] = kind == 'shared'
+	if args.directx == nil then
+		args.directx = self.build:host():is_windows()
+	end
+	vars['DIRECTX'] = args.directx
+
+	vars['SDL_SHARED'] = (kind == 'shared') or args.build:host():is_windows()
 	vars['SDL_STATIC'] = kind == 'static'
 
 	if args.dynapi == false then

@@ -13,7 +13,7 @@ local M = {}
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'shared')
 function M.build(args)
-	local project = require('configure.external').AutotoolsProject:new(
+	local project = require('configure.external').Project:new(
 		table.update({name = 'OpenSSL'}, args)
 	):download{
 		url = 'https://www.openssl.org/source/openssl-' .. args.version .. '.tar.gz',

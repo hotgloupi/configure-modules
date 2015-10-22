@@ -19,7 +19,7 @@ function main(source_dir, python_exe)
 	):strip()
 
 	local version = Process:check_output(
-		{python_exe, '-c', 'import sys; print("%s.%s" % sys.version_info[:2])'}
+		{python_exe, '-c', 'import sys; print(".".join(map(str, sys.version_info[:2])))'}
 	):strip()
 
 	local library_dir = Process:check_output(
@@ -31,7 +31,6 @@ function main(source_dir, python_exe)
 	):strip()
 
 	local lib_path = Path:new(library_dir) / library
-	print(lib_path)
 	assert(lib_path:exists())
 	local expected_name = "libpython" .. version .. tostring(lib_path:ext())
 	local expected_path = Path:new(library_dir) / expected_name

@@ -365,16 +365,26 @@ function M.build(args)
 		end
 	end
 
-	local bootstrap_command = {
-		'sh', 'bootstrap.sh',
+	local bootstrap_command = {}
+
+	if args.build:host():is_windows() then
+		table.extend(bootstrap_command, { 'cmd', '/C', 'bootstrap.bat' })
+	else
+		table.extend(bootstrap_command, { 'sh', 'bootstrap.sh' })
+	end
+
+	table.extend(bootstrap_command, {
 		'--prefix=' .. tostring(install_dir),
 		'--with-libraries=' .. table.concat(args.components, ',')
-	}
+	})
+
+	local env = {}
 
 	if with_python then
 		if args.python == nil then
 			error("You must provide a python library instance in order to build Boost.Python")
 		end
+        env['PYTHONPATH'] = args.python.bundle.library_directory
 		-- This is what we would like to do instead of generating ourself the user-config.jam
 		table.extend(
 			bootstrap_command,
@@ -399,6 +409,7 @@ function M.build(args)
 				}
 			},
 			sources = {args.python.bundle.executable},
+			env = env,
 		}
 	end
 
@@ -499,6 +510,7 @@ function M.build(args)
 		},
 		working_directory = source_dir,
 		sources = sources,
+		env = env,
 	}
 	local Library = require('configure.lang.cxx.Library')
 	local res = {}
@@ -512,23 +524,14 @@ function M.build(args)
 		}
 		local runtime_files = {}
 		local filename = 'boost_' .. component
+
+        local filename = args.compiler:canonical_library_filename('boost_' .. component, kind)
 		if target_os == Platform.OS.windows then
-			if kind == 'static' then
-				filename = 'lib' .. filename
-			else
-				table.append(
-					runtime_files,
-					project:directory_node{path = 'bin'}:path() / filename .. '.dll'
-				)
-			end
-			filename = filename .. '.lib'
-		else
-			if kind == 'static' then
-				filename = 'lib' .. filename .. '.a'
-			elseif target_os == Platform.OS.osx then
-				filename = 'lib' .. filename .. '.dylib'
-			else
-				filename = 'lib' .. filename .. '.so'
+			if kind == 'shared' then
+				--table.append(
+				--	runtime_files,
+				--	project:directory_node{path = 'bin'}:path() / filename .. '.dll'
+				--)
 			end
 		end
 		local files = {

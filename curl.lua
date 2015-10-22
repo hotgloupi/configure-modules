@@ -12,6 +12,25 @@ local M = {}
 -- @param args.compiler The compiler to use
 -- @param[opt] args.kind 'shared' or 'static' (defaults to 'static')
 function M.build(args)
+	args = table.update({name = 'cURL', kind = 'static'}, args)
+	if args.build:host():is_windows() then
+		return M.build_with_cmake(args)
+	else
+		return M.build_with_autotools(args)
+	end
+end
+
+function M.build_with_cmake(args)
+	local kind = args.kind
+	local project = require('configure.external').Project:new(args)
+
+	return args.compiler.Library:new{
+		name = project.name,
+		kind = kind,
+	}
+end
+
+function M.build_with_autotools(args)
 	local project = require("configure.external").AutotoolsProject:new(
 		table.update({name = 'cURL'}, args)
 	):download{

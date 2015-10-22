@@ -13,7 +13,7 @@ local M = {}
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'shared')
 function M.build(args)
-	local project = require('configure.external').AutotoolsProject:new(
+	local project = require('configure.external').Project:new(
 		table.update({name = 'bzip2'}, args)
 	):download{
 		url = 'http://www.bzip.org/' .. args.version .. '/bzip2-' .. args.version ..'.tar.gz',

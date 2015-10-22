@@ -16,6 +16,185 @@ local M = {}
 -- @param args.install_directory
 -- @param args.kind 'shared' or 'static' (defaults to 'shared')
 function M.build(args)
+	args = table.update({
+		name = 'Python',
+		kind = 'shared',
+	}, args)
+	args.major_version = args.version:sub(1,1)
+	args.minor_version = args.version:sub(3,3)
+	args.short_version = args.major_version .. '.' .. args.minor_version
+	args.no_dot_short_version = args.major_version .. args.minor_version
+	args.tag = 'm'
+	if args.build:host():is_windows() then
+		return M.build_with_msvc(args)
+	else
+		return M.build_with_autotools(args)
+	end
+end
+
+function M.build_with_msvc(args)
+	local kind = args.kind
+	local project = require('configure.external').Project:new(args)
+	project:download{
+		url = 'http://www.python.org/ftp/python/' .. args.version .. '/Python-' .. args.version ..'.tgz',
+	}
+	local sources = {}
+	table.extend(sources, args.zlib and args.zlib.files or {})
+	table.extend(sources, args.bzip2 and args.bzip2.files or {})
+	table.extend(sources, args.openssl and args.openssl.files or {})
+
+
+	local targets = {
+		"clean",
+		"python",
+		"pythoncore",
+		"pythonw",
+		"winsound",
+		"_decimal",
+		"_ctypes",
+		"_ctypes_test",
+		"_elementtree",
+		"_msi",
+		"_socket",
+	--	"_sqlite3",
+	--	"_ssl",
+		"_testcapi",
+		"_testimportmultiple",
+	--	"_tkinter",
+	--	"_bz2",
+		"select",
+	--	"_lzma",
+		"unicodedata",
+		"pyexpat",
+	--	"bdist_wininst",
+		--"_hashlib",
+	--	"sqlite3",
+		"_multiprocessing",
+		"python3dll",
+		"xxlimited",
+		"_testbuffer",
+	--	"pylauncher",
+	--	"pywlauncher",
+		"_freeze_importlib",
+		"_overlapped",
+		"_testembed",
+		"_testmultiphase",
+	--	"tcl",
+	--	"tix",
+	--	"tk",
+	--	"libeay",
+	--	"ssleay",
+	}
+
+	local commands = {}
+	for _, target in ipairs(targets) do
+		table.append(commands, {
+			'MSBuild.exe', 'PCbuild\\pcbuild.sln',
+			'/p:Configuration=Release',
+			'/p:Platform=x64',
+			'/p:PlatformToolset=v140',
+			'/p:PlatformTarget=x64',
+			'/t:' .. target,
+		})
+	end
+
+
+
+	project:add_step{
+		name = 'build',
+		working_directory = project:step_directory('source'),
+		targets = {
+			[0] = commands,
+		}
+	}
+
+	local install_dir = project:step_directory('install')
+	local lib_dir = install_dir / 'lib'
+	local bin_dir = install_dir / 'bin'
+	local python_lib_dir = lib_dir / ('python' .. args.short_version)
+
+	local build_dir = project:step_directory('source') / 'PCBuild' / 'amd64'
+
+	local module_files = {
+		"_ctypes.pyd",
+		"_ctypes_test.pyd",
+		"_decimal.pyd",
+		"_elementtree.pyd",
+		"_msi.pyd",
+		"_multiprocessing.pyd",
+		"_overlapped.pyd",
+		"_socket.pyd",
+		"_testbuffer.pyd",
+		"_testcapi.pyd",
+		"_testimportmultiple.pyd",
+		"_testmultiphase.pyd",
+		"pyexpat.pyd",
+		"select.pyd",
+		"unicodedata.pyd",
+		"winsound.pyd",
+		"xxlimited.pyd",
+	}
+
+	local bin_files = {
+		'python.exe',
+		'python' .. args.no_dot_short_version ..'.dll',
+		'python' .. args.major_version ..'.dll',
+	}
+
+	local lib_files = {
+		'python' .. args.no_dot_short_version .. '.lib',
+		'python' .. args.major_version .. '.lib',
+	}
+
+	local targets = {}
+
+	for _, module in ipairs(module_files) do
+		targets[python_lib_dir / module] = {
+			{'cp', build_dir / module, python_lib_dir}
+		}
+	end
+
+	for _, bin in ipairs(bin_files) do
+		targets[bin_dir /  bin] = {
+			{'cp', build_dir / bin, bin_dir}
+		}
+	end
+
+	for _, lib in ipairs(lib_files) do
+		targets[lib_dir / lib] = {
+			{'cp', build_dir / lib, lib_dir}
+		}
+	end
+
+	targets[0] = {
+		{'cp', '-r', project:step_directory('source') / 'Lib' / '.', python_lib_dir}
+	}
+
+	project:add_step{
+		name = 'install',
+		targets = targets,
+	}
+
+	local lib = args.compiler:canonical_library_filename('python' .. args.short_version .. args.tag, kind)
+	lib = project:node{path = 'lib/' .. lib}
+	return args.compiler.Library:new{
+		name = 'Python',
+		include_directories = {
+			project:directory_node{path = 'include/python' .. args.short_version .. args.tag}
+		},
+		files = {lib},
+		kind = kind,
+		bundle = {
+			executable = args.compiler.build:file_node(project:step_directory('install') / 'bin' / 'python.exe'),
+			version = args.version,
+			short_version = args.short_version,
+			library_directory = python_lib_dir,
+		},
+		install_node = project:stamp_node('install'),
+	}
+end
+
+function M.build_with_autotools(args)
 	local kind = args.kind or 'shared'
 	local project = require('configure.external').AutotoolsProject:new(
 		table.update({name = 'Python'}, args)
