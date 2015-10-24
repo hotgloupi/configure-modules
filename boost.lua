@@ -371,12 +371,11 @@ function M.build(args)
 		table.extend(bootstrap_command, { 'cmd', '/C', 'bootstrap.bat' })
 	else
 		table.extend(bootstrap_command, { 'sh', 'bootstrap.sh' })
+		table.extend(bootstrap_command, {
+			'--prefix=' .. tostring(install_dir),
+			'--with-libraries=' .. table.concat(args.components, ',')
+		})
 	end
-
-	table.extend(bootstrap_command, {
-		'--prefix=' .. tostring(install_dir),
-		'--with-libraries=' .. table.concat(args.components, ',')
-	})
 
 	local env = {}
 
@@ -386,14 +385,30 @@ function M.build(args)
 		end
         env['PYTHONPATH'] = args.python.bundle.library_directory
 		-- This is what we would like to do instead of generating ourself the user-config.jam
-		table.extend(
-			bootstrap_command,
-			{
-				'--with-python-root=' .. tostring(args.python.directories[1]:parent_path()),
-				'--with-python=' .. tostring(args.python.bundle.executable:path()),
-				'--with-python-version=' .. args.python.bundle.version:sub(1, 3),
-			}
-		)
+		if not args.build:host():is_windows() then
+			table.extend(
+				bootstrap_command,
+				{
+					'--with-python-root=' .. tostring(args.python.directories[1]:parent_path()),
+					'--with-python=' .. tostring(args.python.bundle.executable:path()),
+					'--with-python-version=' .. args.python.bundle.version:sub(1, 3),
+				}
+			)
+		end
+	end
+
+	local bjam = source_dir / 'b2'
+	project:add_step{
+		name = 'bootstrap',
+		directory = source_dir,
+		targets = {
+			[0] = {bootstrap_command},
+		},
+		working_directory = source_dir,
+		sources = sources,
+	}
+
+	if with_python then
 		project:add_step{
 			name = 'gen-user-config',
 			directory = source_dir,
@@ -413,16 +428,6 @@ function M.build(args)
 		}
 	end
 
-	local bjam = source_dir / 'b2'
-	project:add_step{
-		name = 'bootstrap',
-		directory = source_dir,
-		targets = {
-			[0] = {bootstrap_command},
-		},
-		working_directory = source_dir,
-		sources = sources,
-	}
 
 	local sources = {}
 
@@ -438,8 +443,8 @@ function M.build(args)
 		'variant=release',
 		'threading=multi',
 		'cxxflags=-fPIC',
-		'define=BOOST_ERROR_CODE_HEADER_ONLY=1',
-		'define=BOOST_SYSTEM_NO_DEPRECATED=1',
+	--	'define=BOOST_ERROR_CODE_HEADER_ONLY=1',
+	--	'define=BOOST_SYSTEM_NO_DEPRECATED=1',
 		'dll-path=' .. tostring(install_dir / 'lib'),
 		'--debug-configuration',
 		--'-j4',
@@ -447,6 +452,7 @@ function M.build(args)
 		'--reconfigure',
 		'-d+2',
 		'include=' .. tostring(args.python.include_directories[1]:path()),
+		'address-model=64'
 	}
 
 	if args.compiler.standard then
@@ -472,13 +478,15 @@ function M.build(args)
 		})
 		table.extend(sources, args.zlib.files)
 	end
-	if args.bzip2 ~= nil then
-		table.extend(install_command, {
-			'-sBZIP2_INCLUDE=' .. tostring(args.bzip2.include_directories[1]:path()),
-			'-sBZIP2_LIBPATH=' .. tostring(args.bzip2.files[1]:path():parent_path()),
-			'-sBZIP2_BINARY=bzip2'
-		})
-		table.extend(sources, args.bzip2.files)
+	if not args.build:host():is_windows() then
+		if args.bzip2 ~= nil then
+			table.extend(install_command, {
+				'-sBZIP2_INCLUDE=' .. tostring(args.bzip2.include_directories[1]:path()),
+				'-sBZIP2_LIBPATH=' .. tostring(args.bzip2.files[1]:path():parent_path()),
+				'-sBZIP2_BINARY=bzip2'
+			})
+			table.extend(sources, args.bzip2.files)
+		end
 	end
 
 	for _, component in ipairs(args.components) do
