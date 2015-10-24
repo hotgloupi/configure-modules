@@ -111,7 +111,9 @@ function M.build_with_msvc(args)
 	local install_dir = project:step_directory('install')
 	local lib_dir = install_dir / 'lib'
 	local bin_dir = install_dir / 'bin'
+	local include_dir = install_dir / 'include'
 	local python_lib_dir = lib_dir / ('python' .. args.short_version)
+	local python_include_dir = include_dir / ('python' .. args.short_version)
 
 	local build_dir = project:step_directory('source') / 'PCBuild' / 'amd64'
 
@@ -167,7 +169,9 @@ function M.build_with_msvc(args)
 	end
 
 	targets[0] = {
-		{'cp', '-r', project:step_directory('source') / 'Lib' / '.', python_lib_dir}
+		{'cp', '-r', project:step_directory('source') / 'Lib' / '.', python_lib_dir },
+		{'cp', '-r', project:step_directory('source') / 'Include' / '.', python_include_dir },
+		{'cp', '-r', project:step_directory('source') / 'PC' / 'pyconfig.h', python_include_dir },
 	}
 
 	project:add_step{
