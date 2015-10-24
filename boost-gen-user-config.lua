@@ -40,9 +40,9 @@ function main(source_dir, python_exe)
 
 	local f = assert(io.open(tostring(source_dir / "user-config.jam") , 'w'))
 	f:write("using python : " .. version .. '\n')
-	f:write("             : " .. tostring(python_exe) .. '\n')
-	f:write("             : " .. include_dir .. '\n')
-	f:write("             : " .. library_dir .. '\n')
+	f:write("             : " .. tostring(python_exe):gsub('\\', '/') .. '\n')
+	f:write("             : " .. include_dir:gsub('\\', '/') .. '\n')
+	f:write("             : " .. library_dir:gsub('\\', '/') .. '\n')
 	f:write("             ;\n")
 	f:close()
 end
