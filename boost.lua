@@ -452,7 +452,7 @@ function M.build(args)
 		'--reconfigure',
 		'-d+2',
 		'include=' .. tostring(args.python.include_directories[1]:path()),
-		'address-model=64'
+		'address-model=' .. tostring(args.build:target():address_model()),
 	}
 
 	if args.compiler.standard then
