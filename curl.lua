@@ -13,37 +13,26 @@ local M = {}
 -- @param[opt] args.kind 'shared' or 'static' (defaults to 'static')
 function M.build(args)
 	args = table.update({name = 'cURL', kind = 'static'}, args)
+	local project
+	local configure_args = {}
 	if args.build:host():is_windows() then
-		return M.build_with_cmake(args)
+		project = require("configure.external").CMakeProject:new(args)
 	else
-		return M.build_with_autotools(args)
-	end
-end
-
-function M.build_with_cmake(args)
-	local kind = args.kind
-	local project = require('configure.external').Project:new(args)
-
-	return args.compiler.Library:new{
-		name = project.name,
-		kind = kind,
-	}
-end
-
-function M.build_with_autotools(args)
-	local project = require("configure.external").AutotoolsProject:new(
-		table.update({name = 'cURL'}, args)
-	):download{
-		url = 'http://curl.haxx.se/download/curl-'.. args.version .. '.tar.gz',
-	}:configure{
-		args = {
-			'--without-ssl',
-			'--disable-ldap',
-			'--disable-ldaps',
+		project = require("configure.external").AutotoolsProject:new(args)
+		configure_args = {
+			args = {
+				'--without-ssl',
+				'--disable-ldap',
+				'--disable-ldaps',
+			}
 		}
-	}:build{
-	}:install{
+	end
+	project:download{
+		url = 'http://curl.haxx.se/download/curl-'.. args.version .. '.tar.gz',
 	}
+	project:configure(configure_args)
+	project:build{}
+	project:install{}
 	local kind = args.kind or 'static'
 	local lib = project:node{
 		path = 'lib/' .. args.compiler:canonical_library_filename('curl', kind)
