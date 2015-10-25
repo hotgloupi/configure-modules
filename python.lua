@@ -172,6 +172,12 @@ function M.build_with_msvc(args)
 		{'cp', '-r', project:step_directory('source') / 'Lib' / '.', python_lib_dir },
 		{'cp', '-r', project:step_directory('source') / 'Include' / '.', python_include_dir },
 		{'cp', '-r', project:step_directory('source') / 'PC' / 'pyconfig.h', python_include_dir },
+		{
+			args.compiler.build:configure_program(), '-E', 'lua-function',
+			Filesystem.current_script():parent_path() / 'python-gen-sitecustomize.lua',
+			'main',
+			python_lib_dir
+		}
 	}
 
 	project:add_step{
