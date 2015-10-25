@@ -529,6 +529,7 @@ function M.build(args)
 		local defines = {
 			{'BOOST_ERROR_CODE_HEADER_ONLY', 1},
 			{'BOOST_SYSTEM_NO_DEPRECATED', 1},
+			{'BOOST_ALL_NO_LIB', 1},
 		}
 		local runtime_files = {}
 		local filename = 'boost_' .. component
