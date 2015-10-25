@@ -494,6 +494,7 @@ function M.build(args)
 	end
 	local install_commands = { install_command }
 
+	local build = args.build
 	-- dll-path is not used on OSX
 	if args.build:target():is_osx() then
 		for _, component in ipairs(args.components) do
@@ -532,15 +533,16 @@ function M.build(args)
 			{'BOOST_ALL_NO_LIB', 1},
 		}
 		local runtime_files = {}
-		local filename = 'boost_' .. component
-
-        local filename = args.compiler:canonical_library_filename('boost_' .. component, kind)
+		local filename = args.compiler:canonical_library_filename('boost_' .. component, kind)
 		if target_os == Platform.OS.windows then
 			if kind == 'shared' then
-				--table.append(
-				--	runtime_files,
-				--	project:directory_node{path = 'bin'}:path() / filename .. '.dll'
-				--)
+				filename = 'boost_' .. component .. '.lib'
+				table.append(
+					runtime_files,
+					project:node{path = 'lib/boost_' .. component .. '.dll'}
+				)
+			else
+				filename = 'libboost_' .. component .. '.lib'
 			end
 		end
 		local files = {
@@ -552,7 +554,7 @@ function M.build(args)
 			include_directories = { project:directory_node{path = 'include'} },
 			files = files,
 			defines = defines,
-			runtime_files = selected_runtime_files,
+			runtime_files = runtime_files,
 			install_node = project:stamp_node('install'),
 			kind = kind,
 		})
