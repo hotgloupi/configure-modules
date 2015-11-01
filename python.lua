@@ -34,6 +34,7 @@ end
 
 function M.build_with_msvc(args)
 	local kind = args.kind
+	local build = args.build
 	local project = require('configure.external').Project:new(args)
 	project:download{
 		url = 'http://www.python.org/ftp/python/' .. args.version .. '/Python-' .. args.version ..'.tgz',
@@ -185,17 +186,14 @@ function M.build_with_msvc(args)
 		targets = targets,
 	}
 
-	local lib = args.compiler:canonical_library_filename('python' .. args.short_version .. args.tag, kind)
-	lib = project:node{path = 'lib/' .. lib}
+	local lib = build:file_node(lib_dir / lib_files[2])
 	return args.compiler.Library:new{
 		name = 'Python',
-		include_directories = {
-			project:directory_node{path = 'include/python' .. args.short_version .. args.tag}
-		},
+		include_directories = {build:directory_node(python_include_dir)},
 		files = {lib},
 		kind = kind,
 		bundle = {
-			executable = args.compiler.build:file_node(project:step_directory('install') / 'bin' / 'python.exe'),
+			executable = build:file_node(project:step_directory('install') / 'bin' / 'python.exe'),
 			version = args.version,
 			short_version = args.short_version,
 			library_directory = python_lib_dir,
