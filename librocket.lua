@@ -66,6 +66,8 @@ function M.build(args)
 		end
 		table.append(libraries, project:node{path = 'lib/' .. prefix .. lib .. ext})
 	end
+	local defines = {}
+	if kind == 'static' then table.append(defines, {'ROCKET_STATIC_LIB',  1}) end
 	return args.compiler.Library:new{
 		name = project.name,
 		include_directories = {
@@ -74,6 +76,7 @@ function M.build(args)
 		files = libraries,
 		kind = kind,
 		install_node = project:stamp_node('install'),
+		defines = defines,
 	}
 end
 
