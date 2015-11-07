@@ -196,7 +196,7 @@ function M.build_with_msvc(args)
 			executable = build:file_node(project:step_directory('install') / 'bin' / 'python.exe'),
 			version = args.version,
 			short_version = args.short_version,
-			library_directory = python_lib_dir,
+			library_directory = project:directory_node{path = 'lib/python' .. short_version},
 		},
 		install_node = project:stamp_node('install'),
 	}
@@ -261,19 +261,20 @@ function M.build_with_autotools(args)
 
 	project:install{}
 
+	local install_lib_dir = project:directory_node{path = 'lib/python' .. short_version}
+	local install_include_dir = project:directory_node{path = 'include/python' .. short_version .. tag}
 	local lib = args.compiler:canonical_library_filename('python' .. short_version .. tag, kind)
 	lib = project:node{path = 'lib/' .. lib}
 	return args.compiler.Library:new{
 		name = 'Python',
-		include_directories = {
-			project:directory_node{path = 'include/python' .. short_version .. tag}
-		},
+		include_directories = {install_include_dir},
 		files = {lib},
 		kind = kind,
 		bundle = {
 			executable = project:node{path = 'bin/python' .. short_version},
 			version = args.version,
 			short_version = short_version,
+			library_directory = install_lib_dir,
 		},
 		install_node = project:stamp_node('install'),
 	}

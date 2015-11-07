@@ -87,7 +87,7 @@ function M.build(args)
 			{project:step_directory('source')},
 			args.sdl.include_directories
 		),
-		install_node = project:stamp_node('install'),
+		--install_node = project:stamp_node('install'),
 	}
 end
 

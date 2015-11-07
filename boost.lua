@@ -3,6 +3,8 @@
 
 local M = {}
 
+local tools = require('configure.tools')
+
 local function default_component_defines(component, kind, threading)
 	if component == 'unit_test_framework' and kind == 'shared' then
 		return {'BOOST_TEST_DYN_LINK'}
@@ -383,7 +385,7 @@ function M.build(args)
 		if args.python == nil then
 			error("You must provide a python library instance in order to build Boost.Python")
 		end
-        env['PYTHONPATH'] = args.python.bundle.library_directory
+        env['PYTHONPATH'] = tools.path(args.python.bundle.library_directory)
 		-- This is what we would like to do instead of generating ourself the user-config.jam
 		if not args.build:host():is_windows() then
 			table.extend(
@@ -437,7 +439,7 @@ function M.build(args)
 		'--disable-icu',
 		'--prefix=' .. tostring(install_dir),
 		'--layout=system',
-        '--user-config=' .. tostring(source_dir / 'user-config.jam'),
+		'--user-config=' .. tostring(source_dir / 'user-config.jam'),
 		'link=static',
 		'link=shared',
 		'variant=release',
@@ -557,6 +559,10 @@ function M.build(args)
 			else
 				filename = 'libboost_' .. component .. '.lib'
 			end
+		elseif kind == 'shared' and target_os == Platform.OS.linux then
+			-- Despite the layout beeing set to 'system', on linux the shared
+			-- libraries are still versionned
+			filename = filename .. '.' .. args.version
 		end
 		local files = {
 			project:node{path = 'lib/' .. filename},

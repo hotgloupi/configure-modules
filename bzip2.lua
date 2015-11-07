@@ -47,7 +47,7 @@ function M.build(args)
 		include_directories = {
 			project:step_directory('source'),
 		},
-		install_node = project:stamp_node('install'),
+		--install_node = project:stamp_node('install'),
 	}
 end
 
