@@ -196,7 +196,7 @@ function M.build_with_msvc(args)
 			executable = build:file_node(project:step_directory('install') / 'bin' / 'python.exe'),
 			version = args.version,
 			short_version = args.short_version,
-			library_directory = project:directory_node{path = 'lib/python' .. short_version},
+			library_directory = project:directory_node{path = 'lib/python' .. args.short_version},
 		},
 		install_node = project:stamp_node('install'),
 	}
