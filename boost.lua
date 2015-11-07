@@ -495,6 +495,21 @@ function M.build(args)
 	local install_commands = { install_command }
 
 	local build = args.build
+	for _, component in ipairs(args.components) do
+		local kind = args[component .. '_kind'] or kind
+		if build:target():is_windows() and kind == 'shared' then
+			local dll = 'boost_' .. component .. '.dll'
+			table.append(
+				install_commands,
+				{
+					'cp',
+					project:step_directory('install') / 'lib' / dll,
+					project:step_directory('install') / 'bin' / dll,
+				}
+			)
+		end
+	end
+
 	-- dll-path is not used on OSX
 	if args.build:target():is_osx() then
 		for _, component in ipairs(args.components) do
@@ -508,8 +523,6 @@ function M.build(args)
 			end
 		end
 	end
-
-
 
 	project:add_step{
 		name = 'install',
@@ -539,7 +552,7 @@ function M.build(args)
 				filename = 'boost_' .. component .. '.lib'
 				table.append(
 					runtime_files,
-					project:node{path = 'lib/boost_' .. component .. '.dll'}
+					project:node{path = 'bin/boost_' .. component .. '.dll'}
 				)
 			else
 				filename = 'libboost_' .. component .. '.lib'
