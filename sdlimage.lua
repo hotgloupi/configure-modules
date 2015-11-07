@@ -76,6 +76,13 @@ function M.build(args)
 		'LOAD_XXX',
 		'SDL_IMAGE_USE_COMMON_BACKEND' -- XXX should use IMG_ImageIO.m on OS X
 	}
+
+	local libraries = {}
+	if args.libjpeg ~= nil then
+		table.append(defines, 'LOAD_JPG')
+		table.append(libraries, args.libjpeg)
+	end
+
 	return args.compiler:link_library{
 		name = project.name,
 		sources = source_nodes,
@@ -87,6 +94,7 @@ function M.build(args)
 			{project:step_directory('source')},
 			args.sdl.include_directories
 		),
+		libraries = libraries,
 		--install_node = project:stamp_node('install'),
 	}
 end
