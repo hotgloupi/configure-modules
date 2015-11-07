@@ -20,7 +20,7 @@ function M.build(args)
 	)
 
 	local url
-	if build:host():is_windows() then
+	if false and build:host():is_windows() then
 		url = 'http://www.ijg.org/files/jpegsr' .. args.version .. '.zip'
 	else
 		url = 'http://www.ijg.org/files/jpegsrc.v' .. args.version .. '.tar.gz'
