@@ -67,7 +67,7 @@ function M.build(args)
 	build:add_rule(source_rule)
 
 	return args.compiler:link_library{
-		name = project.name,
+		name = 'jpeg',
 		sources = source_nodes,
 		kind = kind,
 		object_directory = project:step_directory('build'),
