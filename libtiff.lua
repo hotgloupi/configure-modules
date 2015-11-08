@@ -95,11 +95,20 @@ function M.build(args)
 	project:build{}
 	project:install{}
 
-	local files = {
-		project:node{
-			path = 'lib/' .. args.compiler:canonical_library_filename('tiff', kind)
-		}
-	}
+	local filenames = {args.compiler:canonical_library_filename('tiff', kind)}
+	if build:host():is_windows() then
+		if kind == 'static' then
+			filenames = {'tiff.lib', 'port.lib'}
+		else
+			error("Not implemented")
+		end
+	end
+
+	local files = {}
+	for _, filename in ipairs(filenames) do
+		table.append(files, project:node{path = 'lib/' .. filename})
+	end
+
 	local runtime_files = {}
 
 	return args.compiler.Library:new{
