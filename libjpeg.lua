@@ -73,6 +73,7 @@ function M.build(args)
 		object_directory = project:step_directory('build'),
 		directory = project:step_directory('install') / 'lib',
 		include_directories = { source_dir },
+		install_node = project:last_step(),
 	}
 
 end
