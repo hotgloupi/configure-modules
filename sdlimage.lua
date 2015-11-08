@@ -7,7 +7,7 @@ local M = {}
 --
 -- @param args
 -- @param args.build Build instance
--- @param args.name Name of the project (defaults to 'zlib')
+-- @param args.name Name of the project (defaults to 'SDLImage')
 -- @param args.version Version to use
 -- @param args.compiler
 -- @param args.install_directory
@@ -46,7 +46,6 @@ function M.build(args)
 	}
 	local source_nodes = {}
 	for _, filename in ipairs(sources) do
-
 		local node = args.build:file_node(
 			project:step_directory('source') / filename
 		)
@@ -78,9 +77,14 @@ function M.build(args)
 	}
 
 	local libraries = {}
-	if args.libjpeg ~= nil then
+	if args.jpeg ~= nil then
 		table.append(defines, 'LOAD_JPG')
-		table.append(libraries, args.libjpeg)
+		table.append(libraries, args.jpeg)
+	end
+
+	if args.tiff ~= nil then
+		table.append(defines, 'LOAD_TIF')
+		table.append(libraries, args.tiff)
 	end
 
 	return args.compiler:link_library{
