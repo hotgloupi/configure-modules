@@ -66,8 +66,8 @@ function M.build(args)
 		for _, name in ipairs({'zlib', 'lzma', 'jpeg', 'jbig'}) do
 			local lib = args[name]
 			if lib ~= nil then
-				table.append(lib_dirs, tools.path(lib.directories[1]))
-				table.append(inc_dirs, tools.path(lib.include_directories[1]))
+				table.append(lib_dirs, tostring(tools.path(lib.directories[1])))
+				table.append(inc_dirs, tostring(tools.path(lib.include_directories[1])))
 				vars[name] = true
 			else
 				vars[name] = false
