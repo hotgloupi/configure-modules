@@ -21,6 +21,15 @@ local tools = require('configure.tools')
 -- @param args.jbig jbig library to use
 function M.build(args)
 	local build = args.build
+	if args.compiler.name == 'msvc' then
+		if args.kind == 'static' then
+			build:warn("When using msvc, cmake version is used, and does not " ..
+			           "support linking static libraries at this time, " ..
+			           "we fallback to shared libraries")
+		end
+		args.kind = 'shared'
+	end
+
 	local kind = args.kind or 'static'
 
 	local Project = nil
@@ -76,6 +85,11 @@ function M.build(args)
 		vars.CMAKE_LIBRARY_PATH = table.concat(tools.unique(lib_dirs), ';')
 		vars.CMAKE_INCLUDE_PATH = table.concat(tools.unique(inc_dirs), ';')
 
+		vars.BUILD_SHARED_LIBS = (kind == 'shared')
+		if args.zlib then
+			vars.ZLIB_LIBRARY_RELEASE = args.zlib.files[1]
+		end
+
 		configure_args.variables = vars
 	else
 		error("Unknown project kind")
@@ -95,21 +109,28 @@ function M.build(args)
 	project:build{}
 	project:install{}
 
-	local filenames = {args.compiler:canonical_library_filename('tiff', kind)}
+	local filenames = {}
+	local runtime_filenames = {}
 	if build:host():is_windows() then
-		if kind == 'static' then
-			filenames = {'tiff.lib', 'port.lib'}
+		if kind == 'shared' then
+			filenames = {'lib/tiff.lib', 'lib/port.lib'}
+			runtime_filenames = {'bin/tiff.dll'}
 		else
 			error("Not implemented")
 		end
+	else
+		filenames = {'lib/' .. args.compiler:canonical_library_filename('tiff', kind)}
 	end
 
 	local files = {}
 	for _, filename in ipairs(filenames) do
-		table.append(files, project:node{path = 'lib/' .. filename})
+		table.append(files, project:node{path = filename})
 	end
 
 	local runtime_files = {}
+	for _, filename in ipairs(runtime_filenames) do
+		table.append(runtime_files, project:node{path = filename})
+	end
 
 	return args.compiler.Library:new{
 		name = 'libtiff',
