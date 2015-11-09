@@ -380,6 +380,7 @@ function M.build(args)
 	end
 
 	local env = {}
+	local sources = {}
 
 	if with_python then
 		if args.python == nil then
@@ -396,6 +397,11 @@ function M.build(args)
 					'--with-python-version=' .. args.python.bundle.version:sub(1, 3),
 				}
 			)
+		end
+		if args.python.install_node ~= nil then
+			table.append(sources, args.python.install_node)
+		else
+			table.append(sources, args.python.bundle.executable)
 		end
 	end
 
@@ -425,13 +431,12 @@ function M.build(args)
 					}
 				}
 			},
-			sources = {args.python.bundle.executable},
+			sources = sources,
 			env = env,
 		}
 	end
 
 
-	local sources = {}
 
 	local install_command = {
 		tostring(bjam), 'install',
