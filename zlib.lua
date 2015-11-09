@@ -20,12 +20,14 @@ function M.build(args)
 		url = 'http://zlib.net/zlib-' .. args.version .. '.tar.gz',
 	}:configure{}:build{}:install{}
 
+	local runtime_files = {}
 	local filename
 	if args.build:target():os() == Platform.OS.windows then
 		if kind == 'static' then
 			filename = 'zlibstatic.lib'
 		else
 			filename = 'zlib.lib'
+			table.append(runtime_files, project:node{path = 'bin/zlib.dll'})
 		end
 	else
 		if kind == 'static' then
@@ -41,11 +43,10 @@ function M.build(args)
 			project:directory_node{path = 'include'}
 		},
 		files = {lib},
+		runtime_files = runtime_files,
 		kind = kind,
 		install_node = project:stamp_node('install'),
 	}
 end
 
 return M
-
-

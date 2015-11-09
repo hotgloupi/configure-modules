@@ -186,11 +186,17 @@ function M.build_with_msvc(args)
 		targets = targets,
 	}
 
+	local runtime_files = {
+		build:file_node(bin_dir / ('python' .. args.no_dot_short_version ..'.dll')),
+		build:file_node(bin_dir / ('python' .. args.major_version ..'.dll')),
+	}
+
 	local lib = build:file_node(lib_dir / lib_files[2])
 	return args.compiler.Library:new{
 		name = 'Python',
 		include_directories = {build:directory_node(python_include_dir)},
 		files = {lib},
+		runtime_files = runtime_files,
 		kind = kind,
 		bundle = {
 			executable = build:file_node(project:step_directory('install') / 'bin' / 'python.exe'),

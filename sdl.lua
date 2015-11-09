@@ -102,12 +102,19 @@ function M.build(args)
 	local filename = args.compiler:canonical_library_filename('SDL2', kind)
 	local lib = project:node{path = 'lib/' .. filename}
 	table.append(files, lib)
+
+	local runtime_files = {}
+	if args.compiler.build:target():is_windows() then
+		table.append(runtime_files, project:node{path = 'bin/SDL2.dll'})
+	end
+
 	return args.compiler.Library:new{
 		name = project.name,
 		include_directories = {
 			project:directory_node{path = 'include/SDL2'}
 		},
 		files = files,
+		runtime_files = runtime_files,
 		kind = kind,
 		install_node = project:stamp_node('install'),
 	}
