@@ -369,6 +369,7 @@ function M.build(args)
 
 	local bootstrap_command = {}
 
+	-- XXX Setting the compiler for the bootstrap step might be necessary
 	if args.build:host():is_windows() then
 		table.extend(bootstrap_command, { 'cmd', '/C', 'bootstrap.bat' })
 	else
@@ -416,25 +417,25 @@ function M.build(args)
 		sources = sources,
 	}
 
-	if with_python then
-		project:add_step{
-			name = 'gen-user-config',
-			directory = source_dir,
-			targets = {
-				[0] = {
-					{
-						args.build:configure_program(), '-E', 'lua-function',
-						Filesystem.current_script():parent_path() / 'boost-gen-user-config.lua',
-						'main',
-						source_dir,
-						args.python.bundle.executable:path(),
-					}
+	project:add_step{
+		name = 'gen-user-config',
+		directory = source_dir,
+		targets = {
+			[0] = {
+				{
+					args.build:configure_program(), '-E', 'lua-function',
+					Filesystem.current_script():parent_path() / 'boost-gen-user-config.lua',
+					'main',
+					source_dir,
+					with_python and args.python.bundle.executable:path() or 'none',
+					args.compiler.name,
+					args.compiler.binary_path,
 				}
-			},
-			sources = sources,
-			env = env,
-		}
-	end
+			}
+		},
+		sources = sources,
+		env = env,
+	}
 
 
 
