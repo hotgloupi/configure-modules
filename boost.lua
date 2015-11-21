@@ -65,11 +65,21 @@ local function extract_flags_from_filename(f)
 	for i, part in ipairs(parts) do
 		if part == "mt" then
 			res['threading'] = true
+			table.update(res, {
+				static_runtime = false,
+				debug_runtime = false,
+				debug = false,
+				stlport = false,
+				native_iostreams = false,
+			})
 		elseif part:starts_with('vc') then
 			res['toolset'] = part
 		elseif part:match("%d+_%d+") then
 			res['version'] = part:gsub('_', '.')
 		elseif part:match("^s?g?d?p?n?$") then
+			if res.threading == nil then
+				res.threading = false
+			end
 			table.update(res, {
 				static_runtime = part:find('s') ~= nil,
 				debug_runtime = part:find('g') ~= nil,
@@ -267,7 +277,7 @@ function M.find(args)
 				end
 				if check == false then
 					build:debug("Ignore", f, "(The", k, "flag",
-					            (v and "is not" or "is"), " present)")
+					            (v and "is" or "is not"), "present in the filename)")
 					break
 				end
 			end
