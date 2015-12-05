@@ -39,7 +39,7 @@ function M.find(args)
 	return args.compiler.Library:new{
 		name = 'alsa',
 		include_directories = {include_dir},
-		files = {library},
+		files = {args.build:file_node(library)},
 		kind = args.kind,
 	}
 end
