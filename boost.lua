@@ -178,7 +178,7 @@ end
 function M.find(args)
 	local components = args.components
 	if args.components == nil then
-		build:error("You must provide a list of Boost libraries to search for")
+		args.build:error("You must provide a list of Boost libraries to search for")
 	end
 	local env_prefix = args.env_prefix or 'BOOST'
 	local build = args.compiler.build
