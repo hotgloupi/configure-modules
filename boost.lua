@@ -43,9 +43,9 @@ local components = {
 
 
 --- Deduce compilation info from filename
---
--- @arg f Filename to be parsed
--- @returns a table containing the following fields:
+-- @local
+-- @param f Filename to be parsed
+-- @return a table containing the following fields:
 --  - threading: `true` when threading is enabled
 --  - toolset: Boost toolset
 --  - version: {Major, minor, sub-minor}
@@ -168,13 +168,13 @@ end
 -- @param args
 -- @param args.compiler A compiler instance
 -- @param args.components A list of components
--- @param[opt] args.version The required version (defaults to the latest found)
--- @param[opt] args.env_prefix A prefix for all environment variables (default to BOOST)
--- @param[opt] args.kind 'shared' or 'static' (default to 'static')
--- @param[opt] args.defines A list of preprocessor definitions
--- @param[opt] args.threading Search for threading enable libraries (default to the compiler default)
--- @param[opt] args.<COMPONENT>_kind Select the 'static' or 'shared' version of a component.
--- @param[opt] args.<COMPONENT>_defines A list of preprocessor definitions
+-- @param args.version The required version (defaults to the latest found)
+-- @param args.env_prefix A prefix for all environment variables (default to BOOST)
+-- @param args.kind 'shared' or 'static' (default to 'static')
+-- @param args.defines A list of preprocessor definitions
+-- @param args.threading Search for threading enable libraries (default to the compiler default)
+-- @param args.COMPONENT_kind Select the 'static' or 'shared' version of a component.
+-- @param args.COMPONENT_defines A list of preprocessor definitions
 function M.find(args)
 	local components = args.components
 	if args.components == nil then
