@@ -10,7 +10,7 @@ local M = {}
 -- @param args.build The build instance
 -- @param args.version The version to use (for example "7.35.0")
 -- @param args.compiler The compiler to use
--- @param[opt] args.kind 'shared' or 'static' (defaults to 'static')
+-- @param args.kind 'shared' or 'static' (defaults to 'static')
 function M.build(args)
 	args = table.update({name = 'cURL', kind = 'static'}, args)
 	local project

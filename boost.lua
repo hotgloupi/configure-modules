@@ -397,7 +397,7 @@ function M.build(args)
 		if args.python == nil then
 			error("You must provide a python library instance in order to build Boost.Python")
 		end
-        env['PYTHONPATH'] = tools.path(args.python.bundle.library_directory)
+		env['PYTHONPATH'] = tools.path(args.python.bundle.library_directory)
 		-- This is what we would like to do instead of generating ourself the user-config.jam
 		if not args.build:host():is_windows() then
 			table.extend(
